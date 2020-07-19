@@ -1,6 +1,7 @@
-#include <iostream>
+#include <wx/wxprec.h>
+#ifndef WX_PRECOMP
+#include <wx/wx.h>
+#endif // WX_PRECOMP
+#include "app.h"
 
-int main(int argc, char **argv) {
-    std::cout << "Initial commit" << std::endl;
-    return 0;
-}
+IMPLEMENT_APP(SVCConverterAPP)
