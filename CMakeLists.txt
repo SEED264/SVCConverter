@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.10.0)
 set(CMAKE_C_COMPILER   clang)
 set(CMAKE_CXX_COMPILER clang++)
 
+# Set resource compiler
+if (WIN32 AND NOT MSVC)
+    set(CMAKE_RC_COMPILER windres)
+endif()
+
 project(SVCConverter CXX)
 
 # Find required packages
@@ -14,6 +19,10 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/app.cc
     src/main_window.cc
 )
+# Compile rc file
+if (WIN32 AND NOT MSVC)
+    target_sources(${PROJECT_NAME} PRIVATE res/app.rc)
+endif()
 
 # Set include directories
 target_include_directories(${PROJECT_NAME} PRIVATE src)
