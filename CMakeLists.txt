@@ -21,7 +21,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 # Compile rc file
 if (WIN32 AND NOT MSVC)
-    target_sources(${PROJECT_NAME} PRIVATE res/app.rc)
+    target_sources(${PROJECT_NAME} PRIVATE res/app_res.rc)
 endif()
 
 # Set include directories
