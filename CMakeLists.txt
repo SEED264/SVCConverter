@@ -18,8 +18,8 @@ add_executable(${PROJECT_NAME} src/main.cc)
 target_sources(${PROJECT_NAME} PRIVATE
     src/app.cc
     src/main_window.cc
-    src/slider_value_panel.cc
-    src/slider_value_dialog.cc
+    src/analog_value_panel.cc
+    src/analog_value_dialog.cc
     src/parts.cc
 )
 # Compile rc file
