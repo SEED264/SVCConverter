@@ -21,6 +21,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/analog_value_panel.cc
     src/analog_value_dialog.cc
     src/parts.cc
+    src/input_manager.cc
 )
 # Compile rc file
 if (WIN32 AND NOT MSVC)
@@ -32,7 +33,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE src)
 target_include_directories(${PROJECT_NAME} PRIVATE ${wxWidgets_INCLUDE_DIRS})
 
 # Link required libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE ${wxWidgets_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    ${wxWidgets_LIBRARIES}
+    Hid
+)
 
 # Configure linker options
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
