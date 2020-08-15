@@ -9,7 +9,7 @@
 
 class AnalogValueDialog : public wxDialog {
 public:
-    AnalogValueDialog(wxWindow *parent,
+    AnalogValueDialog(wxWindow *parent = nullptr,
                       const wxPoint &pos = wxDefaultPosition,
                       const wxSize &size = wxDefaultSize);
 
