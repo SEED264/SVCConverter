@@ -1,10 +1,6 @@
 #ifndef _SVCCONVERTER_SRC_INPUT_RECORDER_H_
 #define _SVCCONVERTER_SRC_INPUT_RECORDER_H_
 
-#include <wx/wxprec.h>
-#ifndef WX_PRECOMP
-#include <wx/wx.h>
-#endif // WX_PRECOMP
 #include "input_manager.h"
 
 class ButtonRecorder {
