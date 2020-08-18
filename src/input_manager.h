@@ -38,6 +38,8 @@ class RawInputButtonState {
 public:
     std::unordered_map<USHORT, bool> GetUsages(USHORT usage_page) {
         return usages_[usage_page]; }
+    std::unordered_map<USHORT, std::unordered_map<USHORT, bool>> GetUsages() {
+        return usages_; }
     void SetUsageRange(USHORT usage_page, USHORT usage_min, USHORT usage_max);
     void SetPressedUsages(USHORT usage_page, const std::vector<USAGE> &pressed_usages);
 
