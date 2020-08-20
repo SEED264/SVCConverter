@@ -13,6 +13,7 @@
 #endif // WX_PRECOMP
 #include <windows.h>
 
+static
 std::unordered_map<unsigned char, wxString> key_str = {
 {VK_LBUTTON, "Mouse Left"},
 {VK_RBUTTON, "Mouse Right"},
