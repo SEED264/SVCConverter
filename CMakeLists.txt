@@ -21,6 +21,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/main_window.cc
     src/analog_value_panel.cc
     src/analog_value_dialog.cc
+    src/binding_dialog.cc
     src/config_dialog.cc
     src/parts.cc
     src/input_manager.cc
