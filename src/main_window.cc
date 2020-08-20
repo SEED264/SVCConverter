@@ -1,6 +1,7 @@
 #include "main_window.h"
 #include "analog_value_dialog.h"
 #include "config_dialog.h"
+#include "binding_dialog.h"
 
 MainWindow::MainWindow(const wxString &title,
                        const wxPoint &pos,
@@ -40,6 +41,6 @@ MainWindow::MainWindow(const wxString &title,
 void MainWindow::OnShowAnalogValueDialog(wxCommandEvent &event) {
     RawInputDeviceManager manager;
     auto device = manager.GetDeviceLists(1, 5)[1];
-    KnobBindingDialog dialog(nullptr, device);
+    ButtonBindingDialog dialog(nullptr, device);
     dialog.ShowModal();
 }

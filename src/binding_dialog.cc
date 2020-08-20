@@ -85,20 +85,25 @@ ButtonBindingDialog::ButtonBindingDialog(
 void ButtonBindingDialog::OnTimer(wxTimerEvent &event) {
     auto states = fetcher_.GetDeviceState(target_device_->hDevice).button_state.GetUsages();
     recorder_->SetButtonStates(states);
-    auto triggered = recorder_->GetTriggeredStates()[0x09];
-    for (auto tf = triggered.begin(); tf != triggered.end(); ++tf) {
-        auto usage_id = tf->first;
-        auto is_triggered = tf->second;
-        if (is_triggered) {
-            if (!binding_info_) {
-                binding_info_ = new SVCButtonBindInfo;
-                binding_info_->device_list = *target_device_;
+    auto triggered = recorder_->GetTriggeredStates();
+    for (auto ts = triggered.begin(); ts != triggered.end(); ++ts) {
+        auto usage_page = ts->first;
+        auto &tstates = ts->second;
+        for (auto tf = tstates.begin(); tf != tstates.end(); ++tf) {
+            auto usage_id = tf->first;
+            auto is_triggered = tf->second;
+            if (is_triggered) {
+                if (!binding_info_) {
+                    binding_info_ = new SVCButtonBindInfo;
+                    binding_info_->device_list = *target_device_;
+                }
+                binding_info_->usage_page = usage_page;
+                binding_info_->usage_id = usage_id;
+                text_pressed_button_->SetLabel(wxString::Format("<0x%02x, 0x%02x>",
+                                                                usage_page, usage_id));
+                button_confirm_binding_->Enable(true);
+                break;
             }
-            binding_info_->usage_page = 0x09;
-            binding_info_->usage_id = usage_id;
-            text_pressed_button_->SetLabel(wxString::Format("<0x09, 0x%02x>", usage_id));
-            button_confirm_binding_->Enable(true);
-            break;
         }
     }
 }
