@@ -50,4 +50,15 @@ private:
     std::map<HIDUsagePair, RawInputValue> current_states_;
 };
 
+class KeyRecorder {
+public:
+    void SetKeyStates(const std::vector<unsigned char> &states);
+
+    auto GetTriggeredStates() const { return triggered_; }
+
+private:
+    std::vector<bool> triggered_;
+    std::vector<bool> previous_pressed_;
+};
+
 #endif // _SVCCONVERTER_SRC_INPUT_RECORDER_H_

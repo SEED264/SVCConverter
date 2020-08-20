@@ -1,5 +1,6 @@
 #include "main_window.h"
 #include "analog_value_dialog.h"
+#include "config_dialog.h"
 
 MainWindow::MainWindow(const wxString &title,
                        const wxPoint &pos,
@@ -26,8 +27,8 @@ MainWindow::MainWindow(const wxString &title,
     sizer_window->AddStretchSpacer();
     sizer_window->Add(button_quit, 0, wxALIGN_RIGHT);
 
-    sizer_window->SetSizeHints(this);
     panel->SetSizer(sizer_window);
+    sizer_window->SetSizeHints(this);
     SetSize(GetSize()*1.2);
 
     // Bind events
@@ -37,6 +38,8 @@ MainWindow::MainWindow(const wxString &title,
 }
 
 void MainWindow::OnShowAnalogValueDialog(wxCommandEvent &event) {
-    AnalogValueDialog dialog(nullptr);
+    RawInputDeviceManager manager;
+    auto device = manager.GetDeviceLists(1, 5)[1];
+    KnobBindingDialog dialog(nullptr, device);
     dialog.ShowModal();
 }

@@ -6,9 +6,9 @@ void ButtonRecorder::SetButtonStates(USHORT usage_page, std::unordered_map<USHOR
         auto is_pressing = state->second;
         // Set triggered flag true if the button is pressing now and it wasn't pressed at the last call
         auto was_pressing = pressing_buttons_[usage_page][usage_id];
-        triggered_buttons_[usage_page][usage_id] = is_pressing & !was_pressing;
+        triggered_buttons_[usage_page][usage_id] = is_pressing && !was_pressing;
         // Set released flag true if the button isn't pressing now and it was pressed at the last call
-        released_buttons_[usage_page][usage_id] = !is_pressing & was_pressing;
+        released_buttons_[usage_page][usage_id] = !is_pressing && was_pressing;
 
         pressing_buttons_[usage_page][usage_id] = is_pressing;
     }
@@ -28,12 +28,14 @@ void KnobRecorder::SetKnobState(const HIDUsagePair &usage, const RawInputValue &
         auto previous_value = current_states_[usage].value;
         long difference = state.value - previous_value;
         auto range = state.max - state.min;
-        bool is_increase = difference > 0;
-        bool is_reverse = difference > (range / 2);
-        if (is_increase && is_reverse) {
-            difference = (state.value - state.max) + (state.min - previous_value);
-        } else if (is_increase && is_reverse) {
-            difference = (state.max - previous_value) + (state.value - state.min);
+        bool is_increase = state.value > previous_value;
+        bool is_reverse = std::abs(difference) > (range / 2);
+        if (is_reverse) {
+            if (is_increase) {
+                difference = (state.min - previous_value) + (state.value - state.max);
+            } else {
+                difference = (state.max - previous_value) + (state.value - state.min);
+            }
         }
         difference_[usage] = difference;
     }
@@ -55,12 +57,14 @@ void KnobRecorderForRegister::SetKnobState(const HIDUsagePair &usage, const RawI
         auto previous_value = current_states_[usage].value;
         long difference = state.value - previous_value;
         auto range = state.max - state.min;
-        bool is_increase = difference > 0;
-        bool is_reverse = difference > (range / 2);
-        if (is_increase && is_reverse) {
-            difference = (state.value - state.max) + (state.min - previous_value);
-        } else if (is_increase && is_reverse) {
-            difference = (state.max - previous_value) + (state.value - state.min);
+        bool is_increase = state.value > previous_value;
+        bool is_reverse = std::abs(difference) > (range / 2);
+        if (is_reverse) {
+            if (is_increase) {
+                difference = (state.min - previous_value) + (state.value - state.max);
+            } else {
+                difference = (state.max - previous_value) + (state.value - state.min);
+            }
         }
         total_difference_[usage] += difference;
         if (range)
@@ -74,5 +78,18 @@ void KnobRecorderForRegister::SetKnobStates(const std::map<HIDUsagePair, RawInpu
         auto usage = st->first;
         auto state = st->second;
         SetKnobState(usage, state);
+    }
+}
+
+void KeyRecorder::SetKeyStates(const std::vector<unsigned char> &states) {
+    auto states_size = states.size();
+    if (states_size > triggered_.size()) {
+        triggered_.resize(states_size);
+        previous_pressed_.resize(states_size);
+    }
+    for (auto i = 0; i < states_size; ++i) {
+        bool is_pressed = states[i] & 0x80;
+        triggered_[i] = is_pressed && !previous_pressed_[i];
+        previous_pressed_[i] = is_pressed;
     }
 }

@@ -16,12 +16,15 @@ find_package(wxWidgets REQUIRED)
 # Add targets
 add_executable(${PROJECT_NAME} src/main.cc)
 target_sources(${PROJECT_NAME} PRIVATE
+    src/main.cc
     src/app.cc
     src/main_window.cc
     src/analog_value_panel.cc
     src/analog_value_dialog.cc
+    src/config_dialog.cc
     src/parts.cc
     src/input_manager.cc
+    src/input_recorder.cc
 )
 # Compile rc file
 if (WIN32 AND NOT MSVC)
