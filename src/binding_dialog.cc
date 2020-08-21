@@ -333,9 +333,12 @@ KeyBindingDialog::KeyBindingDialog(wxWindow *parent)
     auto *text_how_to_bind = new wxStaticText(panel, wxID_ANY, "Press any key and click OK to bind.");
     auto *text_label_pressed_key = new wxStaticText(panel, wxID_ANY,
                                                     "Pressed key : ");
-    text_pressed_key_ = new wxStaticText(panel, wxID_ANY, "");
+    text_pressed_key_ = new wxTextCtrl(panel, wxID_ANY, "");
     button_confirm_binding_ = new wxButton(panel, ID_BUTTON_CONFIRM_BINDING, "OK");
 
+    text_pressed_key_->SetEditable(false);
+    text_pressed_key_->SetFocus();
+    text_pressed_key_->HideNativeCaret();
 
     auto *sizer_dialog = new wxBoxSizer(wxVERTICAL);
     auto *sizer_how_to_bind = new wxBoxSizer(wxHORIZONTAL);
@@ -356,6 +359,11 @@ KeyBindingDialog::KeyBindingDialog(wxWindow *parent)
     size.x *= 1.3;
     size.y *= 1.3;
     SetSize(size);
+
+    // Disable cursor and focus transition by key
+    text_pressed_key_->Bind(wxEVT_SET_FOCUS, [&](wxFocusEvent &) {
+                                text_pressed_key_->HideNativeCaret(); });
+    text_pressed_key_->Bind(wxEVT_CHAR_HOOK, [](wxKeyEvent & event) { event.Skip(false); });
 
     Bind(wxEVT_BUTTON, &KeyBindingDialog::OnConfirm, this,
          ID_BUTTON_CONFIRM_BINDING);

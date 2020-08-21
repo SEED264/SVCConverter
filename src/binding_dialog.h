@@ -101,7 +101,7 @@ private:
     unsigned char *binding_key_ = nullptr;
     bool is_key_binded_ = false;
 
-    wxStaticText *text_pressed_key_;
+    wxTextCtrl *text_pressed_key_;
     wxButton *button_confirm_binding_;
 
     wxTimer timer_;
