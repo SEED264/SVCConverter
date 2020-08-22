@@ -17,7 +17,7 @@ public:
     ~ButtonBindingDialog();
 
     auto IsButtonBinded() const { return is_button_binded_; }
-    auto GetButtonBindingInfo() const { return *binding_info_; };
+    auto& GetButtonBindingInfo() const { return *binding_info_; };
 
 private:
     enum {
@@ -55,7 +55,7 @@ public:
     ~KnobBindingDialog();
 
     auto IsKnobBinded() const { return is_knob_binded_; }
-    auto GetKnobBindingInfo() const { return *binding_info_; };
+    auto& GetKnobBindingInfo() const { return *binding_info_; };
 
 private:
     enum {
