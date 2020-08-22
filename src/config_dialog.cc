@@ -10,6 +10,7 @@ ConfigDialog::ConfigDialog(wxWindow *parent,
         : wxDialog(parent, wxID_ANY, "Config")
         , profiles_(profiles) {
     InitGUI();
+    RefreshProfileChoice();
     SelectProfile(using_profile);
 }
 
@@ -23,8 +24,14 @@ void ConfigDialog::InitGUI() {
     grid_extra_button_ = new wxGrid(panel, ID_GRID_EXTRA_BUTTON, wxDefaultPosition,
                                     wxDefaultSize, wxBORDER_SIMPLE);
 
-    auto *button_extra_add = new wxButton(panel, ID_BUTTON_EXTRA_ADD, "&Add");
-    auto *button_extra_remove = new wxButton(panel, ID_BUTTON_EXTRA_REMOVE, "&Remove");
+    choice_profile_ = new wxChoice(panel, ID_CHOICE_PROFILE, wxDefaultPosition, wxDefaultSize,
+                                   wxArrayString());
+    auto *button_add_profile = new wxButton(panel, ID_BUTTON_PROFILE_ADD, "Add");
+    auto *button_remove_profile = new wxButton(panel, ID_BUTTON_PROFILE_REMOVE, "Remove");
+    auto *button_rename_profile = new wxButton(panel, ID_BUTTON_PROFILE_RENAME, "Rename");
+
+    auto *button_extra_add = new wxButton(panel, ID_BUTTON_EXTRA_ADD, "Add");
+    auto *button_extra_remove = new wxButton(panel, ID_BUTTON_EXTRA_REMOVE, "Remove");
 
     // Create grid
     grid_knob_->CreateGrid(4, 4);
@@ -101,12 +108,17 @@ void ConfigDialog::InitGUI() {
     grid_extra_button_->SetSize(grid_knob_->GetVirtualSize(), 100);
 
     auto *sizer_dialog = new wxBoxSizer(wxVERTICAL);
+    auto *sizer_profile = new wxBoxSizer(wxHORIZONTAL);
     auto *sizer_grid = new wxBoxSizer(wxVERTICAL);
     auto *sizer_extra_button = new wxBoxSizer(wxHORIZONTAL);
     auto *group_knob = new wxStaticBoxSizer(wxVERTICAL, panel, "Knobs");
     auto *group_button = new wxStaticBoxSizer(wxVERTICAL, panel, "Buttons");
     auto *group_extra_button = new wxStaticBoxSizer(wxVERTICAL, panel, "Extra buttons");
     // Layout
+    sizer_profile->Add(choice_profile_,       1, wxEXPAND | wxALL, 2);
+    sizer_profile->Add(button_add_profile,    0,            wxALL, 2);
+    sizer_profile->Add(button_remove_profile, 0,            wxALL, 2);
+    sizer_profile->Add(button_rename_profile, 0,            wxALL, 2);
     sizer_extra_button->Add(button_extra_add,    0, wxALL, 4);
     sizer_extra_button->Add(button_extra_remove, 0, wxALL, 4);
     group_knob->        Add(grid_knob_,         0, wxALL, 4);
@@ -118,6 +130,7 @@ void ConfigDialog::InitGUI() {
     sizer_grid->Add(group_button,       0, wxALL, 4);
     sizer_grid->Add(group_extra_button, 0, wxALL, 4);
 
+    sizer_dialog->Add(sizer_profile, 0, wxEXPAND);
     sizer_dialog->Add(sizer_grid);
 
     // Set sizer and size
@@ -125,6 +138,10 @@ void ConfigDialog::InitGUI() {
     sizer_dialog->SetSizeHints(this);
 
     // Bind event
+    Bind(wxEVT_CHOICE, &ConfigDialog::OnChoiceProfile, this, ID_CHOICE_PROFILE);
+    Bind(wxEVT_BUTTON, &ConfigDialog::OnAddProfile, this, ID_BUTTON_PROFILE_ADD);
+    Bind(wxEVT_BUTTON, &ConfigDialog::OnRemoveProfile, this, ID_BUTTON_PROFILE_REMOVE);
+    Bind(wxEVT_BUTTON, &ConfigDialog::OnRenameProfile, this, ID_BUTTON_PROFILE_RENAME);
     Bind(wxEVT_GRID_CELL_LEFT_CLICK, &ConfigDialog::SetCursorToRowHead, this);
     Bind(wxEVT_GRID_CELL_LEFT_DCLICK, &ConfigDialog::OnSelectKnobGrid, this,
          ID_GRID_KNOB);
@@ -145,7 +162,13 @@ void ConfigDialog::SelectProfile(unsigned int profile_index) {
     // Select first profile if the specified profile doesn't exist
     if (profile_index > profiles_.size())
         SelectProfile(0);
+    choice_profile_->SetSelection(profile_index);
     current_profile_ = &profiles_[profile_index];
+
+    // Remove all extra grid
+    int ex_num = grid_extra_button_->GetNumberRows();
+    if (ex_num)
+        grid_extra_button_->DeleteRows(0, ex_num);
 
     auto &knob_l = current_profile_->knob_l;
     auto &knob_r = current_profile_->knob_r;
@@ -263,7 +286,92 @@ void ConfigDialog::SyncExtraButtonView() {
     }
 }
 
+void ConfigDialog::RefreshProfileChoice() {
+    // Adjust size
+    int sub = profiles_.size() - choice_profile_->GetCount();
+    if (sub < 0) {
+        for (int i = 0; i < -sub; ++i) {
+            choice_profile_->Delete(0);
+        }
+    } else {
+        for (int i = 0; i < sub; ++i) {
+            choice_profile_->Append("");
+        }
+    }
+    // Replace names
+    for (int i = 0; i < profiles_.size(); ++i) {
+        choice_profile_->SetString(i, profiles_[i].profile_name);
+    }
+}
+
 void ConfigDialog::OnTimer(wxTimerEvent &evt) {
+}
+
+void ConfigDialog::OnChoiceProfile(wxCommandEvent &event) {
+    auto index = choice_profile_->GetSelection();
+    SelectProfile(index);
+}
+
+void ConfigDialog::OnAddProfile(wxCommandEvent &event) {
+    bool is_valid = false;
+    ProfileNameDialog name_dialog(nullptr);
+    wxString name;
+    while (!is_valid) {
+        is_valid = true;
+        name_dialog.ShowModal();
+        if (!name_dialog.IsNameEntered())
+            return;
+        name = name_dialog.GetProfileName();
+        is_valid = !name.empty();
+        for (auto &profile : profiles_) {
+            if (name == profile.profile_name)
+                is_valid = false;
+        }
+    }
+    SVCControllBindProfile profile;
+    profile.profile_name = name;
+    profiles_.push_back(profile);
+    RefreshProfileChoice();
+    SelectProfile(profiles_.size() - 1);
+    is_edited_ = true;
+}
+
+void ConfigDialog::OnRemoveProfile(wxCommandEvent &event) {
+    if (profiles_.size() < 2)
+        return;
+    int index = choice_profile_->GetSelection();
+    auto &profile_name = profiles_[index].profile_name;
+    auto message = wxString::Format("Are you sure you want to erase %s?", profile_name);
+    auto confirm = wxMessageBox(message, "Confirm", wxYES_NO);
+    if (confirm != wxYES)
+        return;
+    profiles_.erase(profiles_.begin() + choice_profile_->GetSelection());
+    RefreshProfileChoice();
+    SelectProfile(0);
+    is_edited_ = true;
+}
+
+void ConfigDialog::OnRenameProfile(wxCommandEvent &event) {
+    bool is_valid = false;
+    auto index = choice_profile_->GetSelection();
+    auto &old_name = profiles_[index].profile_name;
+    ProfileNameDialog name_dialog(nullptr, old_name);
+    wxString name;
+    while (!is_valid) {
+        is_valid = true;
+        name_dialog.ShowModal();
+        if (!name_dialog.IsNameEntered())
+            return;
+        name = name_dialog.GetProfileName();
+        is_valid = !name.empty();
+        for (auto &profile : profiles_) {
+            if (name == profile.profile_name)
+                is_valid = false;
+        }
+    }
+    profiles_[index].profile_name = name;
+    RefreshProfileChoice();
+    is_edited_ = true;
 }
 
 void ConfigDialog::OnAddExtraButton(wxCommandEvent &event) {
@@ -439,4 +547,33 @@ void ConfigDialog::ClearRangeSelection(wxGridRangeSelectEvent &event) {
         wxGrid *grid = reinterpret_cast<wxGrid*>(event.GetEventObject());
         grid->ClearSelection();
     }
+}
+
+ProfileNameDialog::ProfileNameDialog(wxWindow *parent, const wxString &default_name)
+        : wxDialog(parent, wxID_ANY, "Enter profile name") {
+    auto *panel = new wxPanel(this);
+
+    auto *sizer = new wxBoxSizer(wxVERTICAL);
+
+    auto *text = new wxStaticText(panel, wxID_ANY, "Enter profile name. It must be unique.");
+    edit_name_ = new wxTextCtrl(panel, wxID_ANY, default_name);
+    auto *button_ok = new wxButton(panel, ID_BUTTON_OK, "&OK");
+
+    sizer->Add(text, 1, wxALL, 4);
+    sizer->Add(edit_name_, 0, wxEXPAND | wxALL, 4);
+    sizer->Add(button_ok, 0, wxALIGN_RIGHT | wxBOTTOM | wxALL, 4);
+
+    panel->SetSizer(sizer);
+    SetSize(240, 120);
+
+    Bind(wxEVT_SHOW, [&](wxShowEvent &) {
+            edit_name_->SetSelection(-1, -1);
+         });
+    Bind(wxEVT_BUTTON, [&](wxCommandEvent &) {
+            is_entered_ = true;
+            Show(false);}, ID_BUTTON_OK);
+    Bind(wxEVT_CLOSE_WINDOW, [&](wxCloseEvent &) {
+            is_entered_ = false;
+            Show(false);
+        });
 }

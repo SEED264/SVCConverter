@@ -18,6 +18,7 @@ public:
 
 private:
     enum {
+        ID_CHOICE_PROFILE,
         ID_BUTTON_PROFILE_ADD,
         ID_BUTTON_PROFILE_REMOVE,
         ID_BUTTON_PROFILE_RENAME,
@@ -33,7 +34,7 @@ private:
     std::vector<wxString> extra_key_table_;
     bool is_edited_ = false;
 
-    wxChoice *choice_profile;
+    wxChoice *choice_profile_;
     wxGrid *grid_knob_;
     wxGrid *grid_button_;
     wxGrid *grid_extra_button_;
@@ -51,8 +52,13 @@ private:
     void AddExtraButton();
     void RemoveExtraButton();
     void SyncExtraButtonView();
+    void RefreshProfileChoice();
 
     void OnTimer(wxTimerEvent &event);
+    void OnChoiceProfile(wxCommandEvent &event);
+    void OnAddProfile(wxCommandEvent &event);
+    void OnRemoveProfile(wxCommandEvent &event);
+    void OnRenameProfile(wxCommandEvent &event);
     void OnAddExtraButton(wxCommandEvent &event);
     void OnRemoveExtraButton(wxCommandEvent &event);
     void OnSelectButtonGrid(wxGridEvent &event);
@@ -61,6 +67,22 @@ private:
     void ValidateExtraButtonName(wxGridEvent &event);
     void SetCursorToRowHead(wxGridEvent &event);
     void ClearRangeSelection(wxGridRangeSelectEvent &event);
+};
+
+class ProfileNameDialog : public wxDialog {
+public:
+    ProfileNameDialog(wxWindow *parent, const wxString &default_name = "");
+
+    auto GetProfileName() const { return edit_name_->GetValue(); }
+    auto IsNameEntered() const { return is_entered_; }
+
+private:
+    enum {
+        ID_BUTTON_OK
+    };
+    bool is_entered_ = false;
+
+    wxTextCtrl *edit_name_ = nullptr;
 };
 
 #endif // _SVCCONVERTER_SRC_CONFIG_DIALOG_H_
