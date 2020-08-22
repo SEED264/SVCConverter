@@ -3,6 +3,8 @@
 #include "config_dialog.h"
 #include "binding_dialog.h"
 
+#include "config_parser.h"
+
 MainWindow::MainWindow(const wxString &title,
                        const wxPoint &pos,
                        const wxSize &size)
@@ -39,8 +41,12 @@ MainWindow::MainWindow(const wxString &title,
 }
 
 void MainWindow::OnShowAnalogValueDialog(wxCommandEvent &event) {
-    RawInputDeviceManager manager;
-    auto device = manager.GetDeviceLists(1, 5)[1];
-    ButtonBindingDialog dialog(nullptr, device);
+    // RawInputDeviceManager manager;
+    // auto device = manager.GetDeviceLists(1, 5)[1];
+    // KeyBindingDialog dialog(nullptr);
+    auto parser = SVCConfigParser();
+    ConfigDialog dialog(nullptr, parser.ParseProfiles(), 0);
     dialog.ShowModal();
+    if (dialog.IsEdited())
+        parser.DumpProfiles(dialog.GetProfiles());
 }
