@@ -12,6 +12,7 @@ project(SVCConverter CXX)
 
 # Find required packages
 find_package(wxWidgets REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 # Add targets
 add_executable(${PROJECT_NAME} src/main.cc)
@@ -23,6 +24,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/analog_value_dialog.cc
     src/binding_dialog.cc
     src/config_dialog.cc
+    src/config_data.cc
+    src/config_parser.cc
     src/parts.cc
     src/input_manager.cc
     src/input_recorder.cc
@@ -39,6 +42,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${wxWidgets_INCLUDE_DIRS})
 # Link required libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE
     ${wxWidgets_LIBRARIES}
+    nlohmann_json::nlohmann_json
     Hid
 )
 
@@ -46,5 +50,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_link_options(${PROJECT_NAME} PRIVATE /SUBSYSTEM:WINDOWS)
 else()
-    target_link_options(${PROJECT_NAME} PRIVATE -static -s -mwindows)
+    target_link_options(${PROJECT_NAME} PRIVATE
+        # -static
+        -s
+        -mwindows)
 endif()
