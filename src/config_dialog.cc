@@ -179,14 +179,6 @@ void ConfigDialog::InitGUI() {
 }
 
 void ConfigDialog::InitImages() {
-    // panel_image_ = DecodeToMat(LoadBinaryFile("Panel.png"));
-    // start_image_ = DecodeToMat(LoadBinaryFile("LED_START.png"));
-    // bt_a_image_ = DecodeToMat(LoadBinaryFile("LED_BT-A.png"));
-    // bt_b_image_ = DecodeToMat(LoadBinaryFile("LED_BT-B.png"));
-    // bt_c_image_ = DecodeToMat(LoadBinaryFile("LED_BT-C.png"));
-    // bt_d_image_ = DecodeToMat(LoadBinaryFile("LED_BT-D.png"));
-    // fx_l_image_ = DecodeToMat(LoadBinaryFile("LED_FX-L.png"));
-    // fx_r_image_ = DecodeToMat(LoadBinaryFile("LED_FX-R.png"));
     panel_image_ = DecodeToMat(LoadBinaryResource("PANEL", "PNG"));
     start_image_ = DecodeToMat(LoadBinaryResource("START", "PNG"));
     bt_a_image_ = DecodeToMat(LoadBinaryResource("BT_A", "PNG"));
