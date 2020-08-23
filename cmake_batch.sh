@@ -33,7 +33,7 @@ case $mode in
     cmake .. -G"Visual Studio 16 2019" -A x64 \
         -DCMAKE_PREFIX_PATH=$cmake_prefix_path \
         -DCMAKE_INSTALL_PREFIX=$cmake_install_path \
-        -DwxWidgets_ROOT_DIR=$wxwidgets_root_dir_vs
+        -DwxWidgets_ROOT_DIR=$wxwidgets_root_dir_vs \
         -DOpenCV_STATIC=ON \
         -DOpenCV_DIR=$opencv_root_dir_vs
 ;;

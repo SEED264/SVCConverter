@@ -40,7 +40,8 @@ void RawInputButtonState::SetAllUsageReleased(USHORT usage_page) {
 }
 
 void RawInputFetcher::AddDevice(RAWINPUTDEVICELIST device_list) {
-    registered_devices_.push_back(device_list);
+    if (!IsDeviceContained(device_list.hDevice))
+        registered_devices_.push_back(device_list);
 
     // Register device
     auto usage = GetDeviceUsage(device_list);
@@ -85,6 +86,19 @@ void RawInputFetcher::RemoveDevice(RAWINPUTDEVICELIST device_list) {
         RegisterRawInputDevices(&device, 1, sizeof(device));
     }
     device_states_.erase(target_device->hDevice);
+}
+
+void RawInputFetcher::RemoveAllDevice() {
+    for (auto& registered_device : registered_devices_) {
+        auto usage = GetDeviceUsage(registered_device);
+        RAWINPUTDEVICE device;
+        device.usUsagePage = usage.first;
+        device.usUsage = usage.second;
+        device.dwFlags = RIDEV_REMOVE;
+        device.hwndTarget = GetHWND();
+        RegisterRawInputDevices(&device, 1, sizeof(device));
+    }
+    registered_devices_.resize(0);
 }
 
 bool RawInputFetcher::IsDeviceContained(HANDLE device_handle) {

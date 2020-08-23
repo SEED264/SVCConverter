@@ -19,6 +19,7 @@ public:
 
     auto& GetProfiles() const { return profiles_; }
     bool IsEdited() const { return is_edited_; }
+    int GetCurrentProfileIndex() const { return current_profile_index_; }
 
 private:
     enum {
@@ -38,6 +39,7 @@ private:
     std::vector<wxString> extra_key_table_;
     RawInputFetcher *fetcher_ = nullptr;
     bool is_edited_ = false;
+    int current_profile_index_;
 
     wxPanel *image_panel_ = nullptr;
 

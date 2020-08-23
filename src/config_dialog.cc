@@ -269,10 +269,11 @@ void ConfigDialog::SelectProfile(unsigned int profile_index) {
     if (profiles_.size() == 0)
         return;
     // Select first profile if the specified profile doesn't exist
-    if (profile_index > profiles_.size())
+    if (profile_index >= profiles_.size())
         SelectProfile(0);
     choice_profile_->SetSelection(profile_index);
     current_profile_ = &profiles_[profile_index];
+    current_profile_index_ = profile_index;
 
     // Remove all extra grid
     int ex_num = grid_extra_button_->GetNumberRows();

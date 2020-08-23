@@ -62,8 +62,11 @@ public:
     void AddDevice(RAWINPUTDEVICELIST device_list);
     void RemoveDevice(RAWINPUTDEVICELIST device_list);
 
+    void RemoveAllDevice();
+
     bool IsDeviceContained(HANDLE device_handle);
 
+    auto GetRegisteredDevices() const { return registered_devices_; }
     DeviceState GetDeviceState(HANDLE device_handle) {
         return device_states_[device_handle];}
 
