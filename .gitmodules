@@ -1,0 +1,3 @@
+[submodule "submodule/lodepng"]
+	path = submodule/lodepng
+	url = git@github.com:lvandeve/lodepng.git
