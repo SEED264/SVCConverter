@@ -1,17 +1,21 @@
 #ifndef _SVCCONVERTER_SRC_CONFIG_DIALOG_H_
 #define _SVCCONVERTER_SRC_CONFIG_DIALOG_H_
 
+#include <opencv2/opencv.hpp>
+#include <lodepng.h>
 #include <wx/wxprec.h>
 #ifndef WX_PRECOMP
 #include <wx/wx.h>
 #endif // WX_PRECOMP
 #include <wx/grid.h>
 #include "config_data.h"
+#include "input_manager.h"
 
 class ConfigDialog : public wxDialog {
 public:
     ConfigDialog(wxWindow *parent, const std::vector<SVCControllBindProfile> &profiles,
                  unsigned int using_profile);
+    ~ConfigDialog();
 
     auto& GetProfiles() const { return profiles_; }
     bool IsEdited() const { return is_edited_; }
@@ -32,7 +36,21 @@ private:
     std::vector<SVCControllBindProfile> profiles_;
     SVCControllBindProfile *current_profile_;
     std::vector<wxString> extra_key_table_;
+    RawInputFetcher *fetcher_ = nullptr;
     bool is_edited_ = false;
+
+    wxPanel *image_panel_ = nullptr;
+
+    cv::Mat panel_image_;
+    cv::Mat start_image_;
+    cv::Mat bt_a_image_;
+    cv::Mat bt_b_image_;
+    cv::Mat bt_c_image_;
+    cv::Mat bt_d_image_;
+    cv::Mat fx_l_image_;
+    cv::Mat fx_r_image_;
+
+    wxTimer timer_;
 
     wxChoice *choice_profile_;
     wxGrid *grid_knob_;
@@ -40,6 +58,12 @@ private:
     wxGrid *grid_extra_button_;
 
     void InitGUI();
+    void InitImages();
+    std::vector<unsigned char> LoadBinaryResource(const wxString &resource_name,
+                                                  const wxString &resource_type);
+    std::vector<unsigned char> LoadBinaryFile(const std::string &file_name);
+    cv::Mat DecodeToMat(const std::vector<unsigned char> &source_image);
+    wxBitmap ConvertToBitmap(const cv::Mat &source_image);
 
     void SelectProfile(unsigned int profile_index);
     void SetProfileToRow(wxGrid *grid, int row, const wxString &label,

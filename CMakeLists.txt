@@ -30,7 +30,9 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/parts.cc
     src/input_manager.cc
     src/input_recorder.cc
+    submodule/lodepng/lodepng.cpp
 )
+
 # Compile rc file
 if (WIN32 AND NOT MSVC)
     target_sources(${PROJECT_NAME} PRIVATE res/app_res.rc)
@@ -38,6 +40,7 @@ endif()
 
 # Set include directories
 target_include_directories(${PROJECT_NAME} PRIVATE src)
+target_include_directories(${PROJECT_NAME} PRIVATE submodule/lodepng)
 target_include_directories(${PROJECT_NAME} PRIVATE ${wxWidgets_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
 

@@ -37,7 +37,6 @@ std::vector<SVCControllBindProfile> SVCConfigParser::ParseProfiles() {
             ParseButtonBindInfo(pf_js["bt_d"], &profile.bt_d, device_manager);
             ParseButtonBindInfo(pf_js["fx_l"], &profile.fx_l, device_manager);
             ParseButtonBindInfo(pf_js["fx_r"], &profile.fx_r, device_manager);
-            OutputDebugString(wxString::Format("0x%02x", profile.fx_l.usage_id));
             // Parse extra buttons
             auto extra_buttons = pf_js["ex_bt"];
             if (extra_buttons.is_object()) {

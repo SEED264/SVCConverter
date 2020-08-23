@@ -1,5 +1,14 @@
+#ifndef NOMINMAX
+#define NOMINMAX 1
+#endif
+
 #include "config_dialog.h"
+#include <fstream>
 #include <random>
+#ifdef __WXMSW__
+#include "wx/msw/private.h"
+#endif
+#include <windows.h>
 #include "input_manager.h"
 #include "label_string.h"
 #include "binding_dialog.h"
@@ -8,14 +17,23 @@ ConfigDialog::ConfigDialog(wxWindow *parent,
                            const std::vector<SVCControllBindProfile> &profiles,
                            unsigned int using_profile)
         : wxDialog(parent, wxID_ANY, "Config")
-        , profiles_(profiles) {
+        , profiles_(profiles)
+        , timer_(this) {
+    InitImages();
     InitGUI();
     RefreshProfileChoice();
     SelectProfile(using_profile);
 }
 
+ConfigDialog::~ConfigDialog() {
+    if (fetcher_ != nullptr)
+        delete fetcher_;
+}
+
 void ConfigDialog::InitGUI() {
     auto *panel = new wxPanel(this);
+    image_panel_ = new wxPanel(panel, wxID_ANY);
+    image_panel_->SetMinSize(wxSize(960, 540));
 
     grid_knob_ = new wxGrid(panel, ID_GRID_KNOB, wxDefaultPosition,
                             wxDefaultSize, wxBORDER_SIMPLE);
@@ -58,11 +76,8 @@ void ConfigDialog::InitGUI() {
         grid_button_->DisableRowResize(row);
     }
 
-    // for (int col = 0; col < grid_knob_->GetNumberCols(); ++col) {
-    //     grid_extra_button_->DisableColResize(col);
-    // }
-    for (int row = 0; row < grid_extra_button_->GetNumberCols(); ++row) {
-        grid_extra_button_->DisableRowResize(row);
+    for (int col = 0; col < grid_extra_button_->GetNumberCols(); ++col) {
+        grid_extra_button_->DisableColResize(col);
     }
 
     // Set col size
@@ -108,6 +123,7 @@ void ConfigDialog::InitGUI() {
     grid_extra_button_->SetSize(grid_knob_->GetVirtualSize(), 100);
 
     auto *sizer_dialog = new wxBoxSizer(wxVERTICAL);
+    auto *sizer_control = new wxBoxSizer(wxHORIZONTAL);
     auto *sizer_profile = new wxBoxSizer(wxHORIZONTAL);
     auto *sizer_grid = new wxBoxSizer(wxVERTICAL);
     auto *sizer_extra_button = new wxBoxSizer(wxHORIZONTAL);
@@ -126,12 +142,15 @@ void ConfigDialog::InitGUI() {
     group_extra_button->Add(sizer_extra_button, 0, wxALL, 4);
     group_extra_button->Add(grid_extra_button_, 1, wxALL | wxEXPAND, 4);
     group_extra_button->SetMinSize(-1, 180);
+    sizer_grid->Add(sizer_profile,      0, wxEXPAND | wxALL, 2);
     sizer_grid->Add(group_knob,         0, wxALL, 4);
     sizer_grid->Add(group_button,       0, wxALL, 4);
     sizer_grid->Add(group_extra_button, 0, wxALL, 4);
 
-    sizer_dialog->Add(sizer_profile, 0, wxEXPAND);
-    sizer_dialog->Add(sizer_grid);
+    sizer_control->Add(image_panel_, 0, wxALIGN_BOTTOM | wxALL, 4);
+    sizer_control->Add(sizer_grid);
+
+    sizer_dialog->Add(sizer_control);
 
     // Set sizer and size
     panel->SetSizer(sizer_dialog);
@@ -154,7 +173,103 @@ void ConfigDialog::InitGUI() {
     Bind(wxEVT_GRID_CELL_CHANGED, &ConfigDialog::ValidateExtraButtonName, this,
          ID_GRID_EXTRA_BUTTON);
     Bind(wxEVT_GRID_RANGE_SELECT, &ConfigDialog::ClearRangeSelection, this);
+    Bind(wxEVT_TIMER, &ConfigDialog::OnTimer, this, timer_.GetId());
+
+    timer_.Start(33);
 }
+
+void ConfigDialog::InitImages() {
+    // panel_image_ = DecodeToMat(LoadBinaryFile("Panel.png"));
+    // start_image_ = DecodeToMat(LoadBinaryFile("LED_START.png"));
+    // bt_a_image_ = DecodeToMat(LoadBinaryFile("LED_BT-A.png"));
+    // bt_b_image_ = DecodeToMat(LoadBinaryFile("LED_BT-B.png"));
+    // bt_c_image_ = DecodeToMat(LoadBinaryFile("LED_BT-C.png"));
+    // bt_d_image_ = DecodeToMat(LoadBinaryFile("LED_BT-D.png"));
+    // fx_l_image_ = DecodeToMat(LoadBinaryFile("LED_FX-L.png"));
+    // fx_r_image_ = DecodeToMat(LoadBinaryFile("LED_FX-R.png"));
+    panel_image_ = DecodeToMat(LoadBinaryResource("PANEL", "PNG"));
+    start_image_ = DecodeToMat(LoadBinaryResource("START", "PNG"));
+    bt_a_image_ = DecodeToMat(LoadBinaryResource("BT_A", "PNG"));
+    bt_b_image_ = DecodeToMat(LoadBinaryResource("BT_B", "PNG"));
+    bt_c_image_ = DecodeToMat(LoadBinaryResource("BT_C", "PNG"));
+    bt_d_image_ = DecodeToMat(LoadBinaryResource("BT_D", "PNG"));
+    fx_l_image_ = DecodeToMat(LoadBinaryResource("FX_L", "PNG"));
+    fx_r_image_ = DecodeToMat(LoadBinaryResource("FX_R", "PNG"));
+}
+
+std::vector<unsigned char> ConfigDialog::LoadBinaryResource(
+        const wxString &resource_name,
+        const wxString &resource_type) {
+    auto instance = wxGetInstance();
+    auto resource_info = FindResource(instance, resource_name, resource_type);
+    auto resource_handle = LoadResource(instance, resource_info);
+    auto *data = reinterpret_cast<unsigned char*>(LockResource(resource_handle));
+    auto size = SizeofResource(instance, resource_info);
+    std::vector<unsigned char> out_binary(size);
+
+    std::copy(data, data + size, out_binary.begin());
+
+    return out_binary;
+}
+
+std::vector<unsigned char> ConfigDialog::LoadBinaryFile(const std::string &file_name) {
+    std::vector<unsigned char> out_binary;
+    std::ifstream file(file_name, std::ios::binary);
+    if (!file)
+        return out_binary;
+
+    file.unsetf(std::ios::skipws);
+    // Get file size
+    unsigned int fileSize;
+    file.seekg(0, std::ios::end);
+    fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // read the data:
+    out_binary.resize(fileSize);
+    file.read(reinterpret_cast<char*>(out_binary.data()), fileSize);
+
+    return out_binary;
+}
+
+cv::Mat ConfigDialog::DecodeToMat(const std::vector<unsigned char> &source_image) {
+    unsigned int width = 0, height = 0;
+    // OutputDebugString(wxString::Format("width : %i, height : %i", width, height));
+    lodepng::State state;
+    state.info_raw.colortype = LCT_RGB;
+    std::vector<unsigned char> decoded_pixels;
+    lodepng::decode(decoded_pixels, width, height, state, source_image);
+
+    auto out_image = cv::Mat(cv::Size(width, height), CV_8UC3);
+    auto *pixels = out_image.data;
+    auto *source_pixels = decoded_pixels.data();
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            size_t index = x * 3 + width * y * 3;
+            pixels[index    ] = source_pixels[index];
+            pixels[index + 1] = source_pixels[index + 1];
+            pixels[index + 2] = source_pixels[index + 2];
+        }
+    }
+    return out_image;
+}
+wxBitmap ConfigDialog::ConvertToBitmap(const cv::Mat &source_image) {
+    auto out_image = wxImage();
+    auto size = source_image.size();
+    out_image.Create(size.width, size.height, 8);
+    auto *pixels = out_image.GetData();
+    auto *source_pixels = source_image.data;
+    for (int y = 0; y < size.height; ++y) {
+        for (int x = 0; x < size.width; ++x) {
+            size_t index = x * 3 + size.width * y * 3;
+            pixels[index    ] = source_pixels[index];
+            pixels[index + 1] = source_pixels[index + 1];
+            pixels[index + 2] = source_pixels[index + 2];
+        }
+    }
+    return wxBitmap(out_image);
+}
+
 
 void ConfigDialog::SelectProfile(unsigned int profile_index) {
     if (profiles_.size() == 0)
@@ -213,6 +328,18 @@ void ConfigDialog::SelectProfile(unsigned int profile_index) {
                         ex_bt.usage_page, ex_bt.usage_id, ex_bt.key);
         ++i;
     }
+    if (fetcher_ != nullptr)
+        delete fetcher_;
+    fetcher_ = new RawInputFetcher(nullptr);
+    fetcher_->AddDevice(current_profile_->knob_l.device_list);
+    fetcher_->AddDevice(current_profile_->knob_r.device_list);
+    fetcher_->AddDevice(current_profile_->start.device_list);
+    fetcher_->AddDevice(current_profile_->bt_a.device_list);
+    fetcher_->AddDevice(current_profile_->bt_b.device_list);
+    fetcher_->AddDevice(current_profile_->bt_c.device_list);
+    fetcher_->AddDevice(current_profile_->bt_d.device_list);
+    fetcher_->AddDevice(current_profile_->fx_l.device_list);
+    fetcher_->AddDevice(current_profile_->fx_r.device_list);
 }
 
 void ConfigDialog::SetProfileToRow(wxGrid *grid, int row, const wxString &label,
@@ -265,6 +392,7 @@ void ConfigDialog::AddExtraButton() {
     grid_extra_button_->SetReadOnly(row_pos, 1);
     grid_extra_button_->SetReadOnly(row_pos, 2);
     grid_extra_button_->SetReadOnly(row_pos, 3);
+    grid_extra_button_->DisableRowResize(row_pos);
 }
 
 void ConfigDialog::RemoveExtraButton() {
@@ -305,6 +433,48 @@ void ConfigDialog::RefreshProfileChoice() {
 }
 
 void ConfigDialog::OnTimer(wxTimerEvent &evt) {
+    auto &start = current_profile_->start;
+    bool start_pressed = fetcher_->GetDeviceState(start.device_list.hDevice)
+                            .button_state.GetUsages(start.usage_page)[start.usage_id];
+    auto &bt_a = current_profile_->bt_a;
+    bool bt_a_pressed = fetcher_->GetDeviceState(bt_a.device_list.hDevice)
+                            .button_state.GetUsages(bt_a.usage_page)[bt_a.usage_id];
+    auto &bt_b = current_profile_->bt_b;
+    bool bt_b_pressed = fetcher_->GetDeviceState(bt_b.device_list.hDevice)
+                            .button_state.GetUsages(bt_b.usage_page)[bt_b.usage_id];
+    auto &bt_c = current_profile_->bt_c;
+    bool bt_c_pressed = fetcher_->GetDeviceState(bt_c.device_list.hDevice)
+                            .button_state.GetUsages(bt_c.usage_page)[bt_c.usage_id];
+    auto &bt_d = current_profile_->bt_d;
+    bool bt_d_pressed = fetcher_->GetDeviceState(bt_d.device_list.hDevice)
+                            .button_state.GetUsages(bt_d.usage_page)[bt_d.usage_id];
+    auto &fx_l = current_profile_->fx_l;
+    bool fx_l_pressed = fetcher_->GetDeviceState(fx_l.device_list.hDevice)
+                            .button_state.GetUsages(fx_l.usage_page)[fx_l.usage_id];
+    auto &fx_r = current_profile_->fx_r;
+    bool fx_r_pressed = fetcher_->GetDeviceState(fx_r.device_list.hDevice)
+                            .button_state.GetUsages(fx_r.usage_page)[fx_r.usage_id];
+    cv::Mat image;
+    panel_image_.copyTo(image);
+
+    // Add lighting images
+    if (start_pressed)
+        image += start_image_;
+    if (bt_a_pressed)
+        image += bt_a_image_;
+    if (bt_b_pressed)
+        image += bt_b_image_;
+    if (bt_c_pressed)
+        image += bt_c_image_;
+    if (bt_d_pressed)
+        image += bt_d_image_;
+    if (fx_l_pressed)
+        image += fx_l_image_;
+    if (fx_r_pressed)
+        image += fx_r_image_;
+
+    wxClientDC dc(image_panel_);
+    dc.DrawBitmap(ConvertToBitmap(image), 0, 0);
 }
 
 void ConfigDialog::OnChoiceProfile(wxCommandEvent &event) {
@@ -439,6 +609,7 @@ void ConfigDialog::OnSelectButtonGrid(wxGridEvent &event) {
                                           current_button->usage_page, current_button->usage_id);
         ev_obj->SetCellValue(row, 1, product_name);
         ev_obj->SetCellValue(row, 2, usage_str);
+        fetcher_->AddDevice(current_button->device_list);
         break;
     }
     case 3: {
@@ -476,6 +647,7 @@ void ConfigDialog::OnSelectKnobGrid(wxGridEvent &event) {
             ev_obj->SetCellValue(2, 2, usage_str);
             ev_obj->SetCellValue(3, 2, usage_str);
         }
+        fetcher_->AddDevice(current_knob.device_list);
         break;
     }
     case 3: {
@@ -501,6 +673,7 @@ void ConfigDialog::OnSelectExtraButtonGrid(wxGridEvent &event) {
     case 2: {
         SetButton(current_ex_bt);
         SyncExtraButtonView();
+        fetcher_->AddDevice(current_ex_bt.device_list);
         break;
     }
     case 3: {

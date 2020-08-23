@@ -1,3 +1,12 @@
 #include <wx/msw/wx.rc>
 
 APP_ICON ICON "icon/app.ico"
+
+PANEL PNG "image/Panel.png"
+START PNG "image/LED_START.png"
+BT_A PNG "image/LED_BT-A.png"
+BT_B PNG "image/LED_BT-B.png"
+BT_C PNG "image/LED_BT-C.png"
+BT_D PNG "image/LED_BT-D.png"
+FX_L PNG "image/LED_FX_L.png"
+FX_R PNG "image/LED_FX_R.png"

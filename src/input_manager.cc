@@ -40,10 +40,6 @@ void RawInputButtonState::SetAllUsageReleased(USHORT usage_page) {
 }
 
 void RawInputFetcher::AddDevice(RAWINPUTDEVICELIST device_list) {
-    // Do nothing if device not found
-    if (IsDeviceContained(device_list.hDevice))
-        return;
-
     registered_devices_.push_back(device_list);
 
     // Register device
