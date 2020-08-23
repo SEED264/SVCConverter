@@ -201,6 +201,8 @@ std::vector<unsigned char> ConfigDialog::LoadBinaryResource(
 
     std::copy(data, data + size, out_binary.begin());
 
+    FreeResource(data);
+
     return out_binary;
 }
 
