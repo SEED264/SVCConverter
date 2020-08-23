@@ -12,6 +12,7 @@ project(SVCConverter CXX)
 
 # Find required packages
 find_package(wxWidgets REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 # Add targets
@@ -38,10 +39,12 @@ endif()
 # Set include directories
 target_include_directories(${PROJECT_NAME} PRIVATE src)
 target_include_directories(${PROJECT_NAME} PRIVATE ${wxWidgets_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
 
 # Link required libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE
     ${wxWidgets_LIBRARIES}
+    ${OpenCV_LIBS}
     nlohmann_json::nlohmann_json
     Hid
 )

@@ -22,6 +22,8 @@ cmake_install_path=""
 # Dependency dirs
 wxwidgets_root_dir=""
 wxwidgets_root_dir_vs=""
+opencv_root_dir=""
+opencv_root_dir_vs=""
 
 # Launch cmake
 case $mode in
@@ -32,6 +34,8 @@ case $mode in
         -DCMAKE_PREFIX_PATH=$cmake_prefix_path \
         -DCMAKE_INSTALL_PREFIX=$cmake_install_path \
         -DwxWidgets_ROOT_DIR=$wxwidgets_root_dir_vs
+        -DOpenCV_STATIC=ON \
+        -DOpenCV_DIR=$opencv_root_dir_vs
 ;;
 
 "msys")
@@ -42,6 +46,8 @@ case $mode in
         -DCMAKE_INSTALL_PREFIX=$cmake_install_path \
         -DwxWidgets_ROOT_DIR=$wxwidgets_root_dir \
         -DwxWidgets_CONFIG_EXECUTABLE="${wxwidgets_root_dir}/bin/wx-config"
+        -DOpenCV_STATIC=ON \
+        -DOpenCV_DIR=$opencv_root_dir
 ;;
 
 "ninja")
@@ -51,7 +57,9 @@ case $mode in
         -DCMAKE_PREFIX_PATH=$cmake_prefix_path \
         -DCMAKE_INSTALL_PREFIX=$cmake_install_path \
         -DwxWidgets_ROOT_DIR=$wxwidgets_root_dir \
-        -DwxWidgets_CONFIG_EXECUTABLE="${wxwidgets_root_dir}/bin/wx-config"
+        -DwxWidgets_CONFIG_EXECUTABLE="${wxwidgets_root_dir}/bin/wx-config" \
+        -DOpenCV_STATIC=ON \
+        -DOpenCV_DIR=$opencv_root_dir
 ;;
 
 "clean")
