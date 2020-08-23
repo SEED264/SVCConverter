@@ -8,6 +8,7 @@
 #include <limits>
 #include <map>
 #include <vector>
+#include <winsock2.h>
 #include <windows.h>
 extern "C" {
 #include <hidsdi.h>

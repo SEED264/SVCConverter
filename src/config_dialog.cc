@@ -8,6 +8,7 @@
 #ifdef __WXMSW__
 #include "wx/msw/private.h"
 #endif
+#include <winsock2.h>
 #include <windows.h>
 #include "input_manager.h"
 #include "label_string.h"
