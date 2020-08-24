@@ -26,6 +26,11 @@ enum SVCKnobIncreaseDirection {
     Left
 };
 
+enum SVCKnobDeviceType {
+    Mouse,
+    HID
+};
+
 // Information for binding the button to the key
 struct SVCButtonBindInfo {
     // RawInput device list
@@ -42,6 +47,9 @@ struct SVCButtonBindInfo {
 
 // Information for binding the knob to the key
 struct SVCKnobBindInfo {
+    // Knob device type
+    SVCKnobDeviceType type = HID;
+
     // RawInput device list
     RAWINPUTDEVICELIST device_list = { .hDevice = nullptr };
 

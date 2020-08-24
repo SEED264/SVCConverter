@@ -165,6 +165,8 @@ void ConfigDialog::InitGUI() {
     Bind(wxEVT_GRID_CELL_LEFT_CLICK, &ConfigDialog::SetCursorToRowHead, this);
     Bind(wxEVT_GRID_CELL_LEFT_DCLICK, &ConfigDialog::OnSelectKnobGrid, this,
          ID_GRID_KNOB);
+    Bind(wxEVT_GRID_CELL_RIGHT_DCLICK, &ConfigDialog::OnSelectKnobGridAsMouse, this,
+         ID_GRID_KNOB);
     Bind(wxEVT_GRID_CELL_LEFT_DCLICK, &ConfigDialog::OnSelectButtonGrid, this,
          ID_GRID_BUTTON);
     Bind(wxEVT_GRID_CELL_LEFT_DCLICK, &ConfigDialog::OnSelectExtraButtonGrid, this,
@@ -283,14 +285,34 @@ void ConfigDialog::SelectProfile(unsigned int profile_index) {
 
     auto &knob_l = current_profile_->knob_l;
     auto &knob_r = current_profile_->knob_r;
-    SetProfileToRow(grid_knob_, 0, "Knob L (Turn L)", GetHIDProductName(knob_l.device_list),
+    wxString knob_l_product_name;
+    if (knob_l.type == HID)
+        knob_l_product_name = GetHIDProductName(knob_l.device_list);
+    else
+        knob_l_product_name = "Mouse";
+    wxString knob_r_product_name;
+    if (knob_r.type == HID)
+        knob_r_product_name = GetHIDProductName(knob_r.device_list);
+    else
+        knob_r_product_name = "Mouse";
+    SetProfileToRow(grid_knob_, 0, "Knob L (Turn L)", knob_l_product_name,
                     knob_l.usage_page, knob_l.usage_id, knob_l.l_key);
-    SetProfileToRow(grid_knob_, 1, "Knob L (Turn R)", GetHIDProductName(knob_l.device_list),
+    SetProfileToRow(grid_knob_, 1, "Knob L (Turn R)", knob_l_product_name,
                     knob_l.usage_page, knob_l.usage_id, knob_l.r_key);
-    SetProfileToRow(grid_knob_, 2, "Knob R (Turn L)", GetHIDProductName(knob_r.device_list),
+    SetProfileToRow(grid_knob_, 2, "Knob R (Turn L)", knob_r_product_name,
                     knob_r.usage_page, knob_r.usage_id, knob_r.l_key);
-    SetProfileToRow(grid_knob_, 3, "Knob R (Turn R)", GetHIDProductName(knob_r.device_list),
+    SetProfileToRow(grid_knob_, 3, "Knob R (Turn R)", knob_r_product_name,
                     knob_r.usage_page, knob_r.usage_id, knob_r.r_key);
+    if (knob_l.type == Mouse) {
+        auto direction_str = (knob_l.usage_id == 0x30) ? "X" : "Y";
+        grid_knob_->SetCellValue(0, 2, direction_str);
+        grid_knob_->SetCellValue(1, 2, direction_str);
+    }
+    if (knob_r.type == Mouse) {
+        auto direction_str = (knob_r.usage_id == 0x30) ? "X" : "Y";
+        grid_knob_->SetCellValue(2, 2, direction_str);
+        grid_knob_->SetCellValue(3, 2, direction_str);
+    }
 
     auto &start = current_profile_->start;
     auto &bt_a = current_profile_->bt_a;
@@ -348,36 +370,53 @@ void ConfigDialog::SetProfileToRow(wxGrid *grid, int row, const wxString &label,
     grid->SetCellValue(row, 3, key_str[key]);
 }
 
-void ConfigDialog::SetButton(SVCButtonBindInfo &info) {
+bool ConfigDialog::SetButton(SVCButtonBindInfo &info) {
     ButtonBindingDialog dialog(nullptr, info.device_list, RawInputDeviceManager());
     dialog.ShowModal();
     if (!dialog.IsButtonBinded())
-        return;
+        return false;
     auto &bind_info = dialog.GetButtonBindingInfo();
     info.device_list = bind_info.device_list;
     info.usage_page = bind_info.usage_page;
     info.usage_id = bind_info.usage_id;
+    return true;
 }
 
-void ConfigDialog::SetKnob(SVCKnobBindInfo &info) {
+bool ConfigDialog::SetKnob(SVCKnobBindInfo &info) {
     KnobBindingDialog dialog(nullptr, info.device_list, RawInputDeviceManager());
     dialog.ShowModal();
     if (!dialog.IsKnobBinded())
-        return;
+        return false;
     auto &bind_info = dialog.GetKnobBindingInfo();
     info.device_list = bind_info.device_list;
     info.increase_direction = bind_info.increase_direction;
     info.usage_page = bind_info.usage_page;
     info.usage_id = bind_info.usage_id;
+    return true;
 }
 
-void ConfigDialog::SetKey(unsigned char *out_key) {
+bool ConfigDialog::SetKnobAsMouse(SVCKnobBindInfo &info) {
+    MouseBindingDialog dialog(nullptr, info.device_list, RawInputDeviceManager());
+    dialog.ShowModal();
+    if (!dialog.IsKnobBinded())
+        return false;
+    auto &bind_info = dialog.GetKnobBindingInfo();
+    info.type = Mouse;
+    info.device_list = bind_info.device_list;
+    info.increase_direction = bind_info.increase_direction;
+    info.usage_page = bind_info.usage_page;
+    info.usage_id = bind_info.usage_id;
+    return true;
+}
+
+bool ConfigDialog::SetKey(unsigned char *out_key) {
     KeyBindingDialog dialog(nullptr);
     dialog.ShowModal();
     if (!dialog.IsKeyBinded())
-        return;
+        return false;
     auto key = dialog.GetKey();
     *out_key = key;
+    return true;
 }
 
 void ConfigDialog::AddExtraButton() {
@@ -565,7 +604,7 @@ void ConfigDialog::OnSelectButtonGrid(wxGridEvent &event) {
     auto col = event.GetCol();
     auto *ev_obj = reinterpret_cast<wxGrid*>(event.GetEventObject());
     ev_obj->SetGridCursor(row, 0);
-    SVCButtonBindInfo *current_button;
+    SVCButtonBindInfo *current_button = nullptr;
     switch (row) {
     case 0: {
         current_button = &current_profile_->start;
@@ -599,7 +638,8 @@ void ConfigDialog::OnSelectButtonGrid(wxGridEvent &event) {
     switch (col) {
     case 1:
     case 2: {
-        SetButton(*current_button);
+        if (!SetButton(*current_button))
+            return;
         auto product_name = GetHIDProductName(current_button->device_list);
         auto usage_str = wxString::Format("<0x%02x, 0x%02x>",
                                           current_button->usage_page, current_button->usage_id);
@@ -609,7 +649,8 @@ void ConfigDialog::OnSelectButtonGrid(wxGridEvent &event) {
         break;
     }
     case 3: {
-        SetKey(&current_button->key);
+        if (!SetKey(&current_button->key))
+            return;
         ev_obj->SetCellValue(row, col, key_str[current_button->key]);
         break;
     }
@@ -628,7 +669,8 @@ void ConfigDialog::OnSelectKnobGrid(wxGridEvent &event) {
     switch (col) {
     case 1:
     case 2: {
-        SetKnob(current_knob);
+        if (!SetKnob(current_knob))
+            return;
         auto product_name = GetHIDProductName(current_knob.device_list);
         auto usage_str = wxString::Format("<0x%02x, 0x%02x>",
                                           current_knob.usage_page, current_knob.usage_id);
@@ -649,7 +691,49 @@ void ConfigDialog::OnSelectKnobGrid(wxGridEvent &event) {
     case 3: {
         bool is_l_key = (row % 2) == 0;
         auto &key = (is_l_key) ? current_knob.l_key : current_knob.r_key;
-        SetKey(&key);
+        if (!SetKey(&key))
+            return;
+        ev_obj->SetCellValue(row, col, key_str[key]);
+        break;
+    }
+    }
+    is_edited_ = true;
+}
+
+void ConfigDialog::OnSelectKnobGridAsMouse(wxGridEvent &event) {
+    auto row = event.GetRow();
+    auto col = event.GetCol();
+    auto *ev_obj = reinterpret_cast<wxGrid*>(event.GetEventObject());
+    ev_obj->SetGridCursor(row, 0);
+    bool is_l_knob = row == 0 || row == 1;
+    auto &current_knob = (is_l_knob) ? current_profile_->knob_l
+        : current_profile_->knob_r;
+    switch (col) {
+    case 1:
+    case 2: {
+        if (!SetKnobAsMouse(current_knob))
+            return;
+        auto product_name = "Mouse";
+        auto direction_str = (current_knob.usage_id == 0x30) ? "X" : "Y";
+        if (is_l_knob) {
+            ev_obj->SetCellValue(0, 1, product_name);
+            ev_obj->SetCellValue(1, 1, product_name);
+            ev_obj->SetCellValue(0, 2, direction_str);
+            ev_obj->SetCellValue(1, 2, direction_str);
+        } else {
+            ev_obj->SetCellValue(2, 1, product_name);
+            ev_obj->SetCellValue(3, 1, product_name);
+            ev_obj->SetCellValue(2, 2, direction_str);
+            ev_obj->SetCellValue(3, 2, direction_str);
+        }
+        fetcher_->AddDevice(current_knob.device_list);
+        break;
+    }
+    case 3: {
+        bool is_l_key = (row % 2) == 0;
+        auto &key = (is_l_key) ? current_knob.l_key : current_knob.r_key;
+        if (!SetKey(&key))
+            return;
         ev_obj->SetCellValue(row, col, key_str[key]);
         break;
     }
@@ -667,13 +751,15 @@ void ConfigDialog::OnSelectExtraButtonGrid(wxGridEvent &event) {
     switch (col) {
     case 1:
     case 2: {
-        SetButton(current_ex_bt);
+        if (!SetButton(current_ex_bt))
+            return;
         SyncExtraButtonView();
         fetcher_->AddDevice(current_ex_bt.device_list);
         break;
     }
     case 3: {
-        SetKey(&current_ex_bt.key);
+        if (!SetKey(&current_ex_bt.key))
+            return;
         SyncExtraButtonView();
         break;
     }

@@ -9,8 +9,8 @@ ButtonBindingDialog::ButtonBindingDialog(
         : wxDialog(parent, wxID_ANY, "Button binding"),
           fetcher_(this) {
     // Get selectable devices
-    auto joysticks = device_manager.GetDeviceLists(0x01, 0x04);
-    auto game_pads = device_manager.GetDeviceLists(0x01, 0x05);
+    auto joysticks = device_manager.GetHIDDeviceLists(0x01, 0x04);
+    auto game_pads = device_manager.GetHIDDeviceLists(0x01, 0x05);
     selectable_devices_.insert(selectable_devices_.end(), joysticks.begin(), joysticks.end());
     selectable_devices_.insert(selectable_devices_.end(), game_pads.begin(), game_pads.end());
 
@@ -166,8 +166,8 @@ KnobBindingDialog::KnobBindingDialog(
         : wxDialog(parent, wxID_ANY, "Knob binding"),
           fetcher_(this) {
     // Get selectable devices
-    auto joysticks = device_manager.GetDeviceLists(0x01, 0x04);
-    auto game_pads = device_manager.GetDeviceLists(0x01, 0x05);
+    auto joysticks = device_manager.GetHIDDeviceLists(0x01, 0x04);
+    auto game_pads = device_manager.GetHIDDeviceLists(0x01, 0x05);
     selectable_devices_.insert(selectable_devices_.end(), joysticks.begin(), joysticks.end());
     selectable_devices_.insert(selectable_devices_.end(), game_pads.begin(), game_pads.end());
 
@@ -408,4 +408,170 @@ void KeyBindingDialog::OnConfirm(wxCommandEvent &event) {
 
 KeyBindingDialog::~KeyBindingDialog() {
     delete binding_key_;
+}
+
+/* ---------- KnobBindingDialog ---------- */
+MouseBindingDialog::MouseBindingDialog(
+    wxWindow *parent,
+    RAWINPUTDEVICELIST target_device,
+    RawInputDeviceManager device_manager)
+    : wxDialog(parent, wxID_ANY, "Mouse binding"),
+    fetcher_(this) {
+    // Get selectable devices
+    selectable_devices_ = device_manager.GetMouseDeviceLists();
+
+    // Add target device to fetcher if it's valid
+    int target_index;
+    if (GetSelectedDevice(target_device, &target_index)) {
+        fetcher_.AddDevice(target_device);
+        target_device_ = &target_device;
+    } else {
+        fetcher_.AddDevice(selectable_devices_[0]);
+        target_device_ = &selectable_devices_[0];
+        target_index = 0;
+    }
+    wxString product_name = GetHIDProductName(selectable_devices_[target_index]);
+    recorder_ = new KnobRecorderForRegister;
+
+    auto *panel = new wxPanel(this);
+    // Create choice from target device lists
+    wxArrayString target_device_names;
+    int i = 0;
+    for (auto &sd : selectable_devices_) {
+        auto name = GetHIDProductName(sd);
+        if (name.empty()) {
+            name = wxString::Format("Mouse %i", i);
+            ++i;
+        }
+        target_device_names.Add(name);
+    }
+    choice_select_device_ = new wxChoice(panel, ID_CHOICE_TARGET_DEVICE, wxDefaultPosition,
+        wxDefaultSize, target_device_names);
+    choice_select_device_->SetSelection(target_index);
+
+    auto *text_how_to_bind = new wxStaticText(panel, wxID_ANY, "Keep turning knob to right and click OK to bind.");
+    auto *text_label_target_device = new wxStaticText(panel, wxID_ANY, "Target device : ");
+    text_target_device_ = new wxStaticText(panel, wxID_ANY, product_name);
+    auto *text_label_most_turned_knob = new wxStaticText(panel, wxID_ANY,
+        "Most turned knob : ");
+    text_most_turned_knob_ = new wxStaticText(panel, wxID_ANY, "");
+    button_confirm_binding_ = new wxButton(panel, ID_BUTTON_CONFIRM_BINDING, "&OK");
+
+    // Disable confirm button
+    button_confirm_binding_->Enable(false);
+
+    sizer_dialog_ = new wxBoxSizer(wxVERTICAL);
+    auto *sizer_select_device = new wxBoxSizer(wxHORIZONTAL);
+    auto *sizer_selected_device = new wxBoxSizer(wxHORIZONTAL);
+    auto *sizer_most_turned_knob = new wxBoxSizer(wxHORIZONTAL);
+
+    sizer_select_device->Add(choice_select_device_, 1);
+
+    sizer_selected_device->Add(text_label_target_device, 0);
+    sizer_selected_device->Add(text_target_device_, 1);
+
+    sizer_most_turned_knob->Add(text_label_most_turned_knob, 0);
+    sizer_most_turned_knob->Add(text_most_turned_knob_, 1);
+
+    sizer_dialog_->Add(sizer_select_device, 0);
+    sizer_dialog_->Add(text_how_to_bind, 1);
+    sizer_dialog_->Add(sizer_selected_device, 1);
+    sizer_dialog_->Add(sizer_most_turned_knob, 1);
+    sizer_dialog_->Add(button_confirm_binding_, 0, wxALIGN_RIGHT);
+
+    panel->SetSizer(sizer_dialog_);
+    sizer_dialog_->SetSizeHints(this);
+    auto size = GetSize();
+    size.x *= 1.3;
+    size.y *= 1.3;
+    SetSize(size);
+
+    Bind(wxEVT_CHOICE, &MouseBindingDialog::OnSelectDevice, this,
+        ID_CHOICE_TARGET_DEVICE);
+    Bind(wxEVT_BUTTON, &MouseBindingDialog::OnConfirm, this,
+        ID_BUTTON_CONFIRM_BINDING);
+    Bind(wxEVT_TIMER, &MouseBindingDialog::OnTimer, this);
+    timer_.SetOwner(this);
+    timer_.Start(1000/60);
+}
+
+void MouseBindingDialog::OnTimer(wxTimerEvent &event) {
+    auto &state = fetcher_.GetMouseState(target_device_->hDevice);
+    auto diff_x = state.GetXDifferences();
+    auto diff_y = state.GetYDifferences();
+    if (diff_x == diff_y)
+        return;
+
+    if (!binding_info_)
+        binding_info_ = new SVCKnobBindInfo;
+    binding_info_->type = Mouse;
+    if (std::abs(diff_x) > std::abs(diff_y)) {
+        binding_info_->device_list = *target_device_;
+        binding_info_->usage_page = 0x01;
+        binding_info_->usage_id = 0x30;
+        if (diff_x > 0)
+            binding_info_->increase_direction = Right;
+        else
+            binding_info_->increase_direction = Left;
+        text_most_turned_knob_->SetLabel(wxString::Format("X <%i>", diff_x));
+    } else {
+        binding_info_->device_list = *target_device_;
+        binding_info_->usage_page = 0x01;
+        binding_info_->usage_id = 0x31;
+        if (diff_y > 0)
+            binding_info_->increase_direction = Right;
+        else
+            binding_info_->increase_direction = Left;
+        text_most_turned_knob_->SetLabel(wxString::Format("Y <%i>", diff_y));
+    }
+    button_confirm_binding_->Enable(true);
+}
+
+void MouseBindingDialog::OnSelectDevice(wxCommandEvent &event) {
+    int target_index = choice_select_device_->GetSelection();
+    auto &target_device = selectable_devices_[target_index];
+    target_device_ = &target_device;
+    fetcher_.AddDevice(target_device);
+    text_target_device_->SetLabel(GetHIDProductName(*target_device_));
+    text_most_turned_knob_->SetLabel("");
+    delete recorder_;
+    recorder_ = new KnobRecorderForRegister;
+    if (binding_info_) {
+        delete binding_info_;
+        binding_info_ = nullptr;
+    }
+    button_confirm_binding_->Enable(false);
+
+    // Resize dialog
+    sizer_dialog_->SetSizeHints(this);
+    auto size = GetSize();
+    size.x *= 1.3;
+    size.y *= 1.3;
+    SetSize(size);
+}
+
+void MouseBindingDialog::OnConfirm(wxCommandEvent &event) {
+    is_knob_binded_ = true;
+    Close();
+}
+
+RAWINPUTDEVICELIST* MouseBindingDialog::GetSelectedDevice(
+    const RAWINPUTDEVICELIST &target_device, int *out_index) {
+    auto device =  std::find_if(selectable_devices_.begin(), selectable_devices_.end(),
+        [&](RAWINPUTDEVICELIST &device){
+            return device.hDevice == target_device.hDevice; });
+    bool is_device_valid = device != selectable_devices_.end();
+    // Set index if out variable is valid
+    if (out_index) {
+        if (is_device_valid)
+            *out_index = std::distance(selectable_devices_.begin(), device);
+        else
+            *out_index = -1;
+    }
+    return (is_device_valid) ? &*device : nullptr;
+}
+
+MouseBindingDialog::~MouseBindingDialog() {
+    delete recorder_;
+    delete binding_info_;
 }

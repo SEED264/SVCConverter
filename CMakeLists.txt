@@ -34,9 +34,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 # Compile rc file
-if (WIN32 AND NOT MSVC)
-    target_sources(${PROJECT_NAME} PRIVATE res/app_res.rc)
-endif()
+target_sources(${PROJECT_NAME} PRIVATE res/app_res.rc)
 
 # Set include directories
 target_include_directories(${PROJECT_NAME} PRIVATE src)
@@ -54,6 +52,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 # Configure linker options
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(${PROJECT_NAME} PRIVATE /std:c++latest /utf-8 /w /MT /MP)
     target_link_options(${PROJECT_NAME} PRIVATE /SUBSYSTEM:WINDOWS)
 else()
     target_link_options(${PROJECT_NAME} PRIVATE

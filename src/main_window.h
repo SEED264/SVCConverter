@@ -28,6 +28,8 @@ private:
     int current_profile_index_ = 0;
     RawInputFetcher fetcher_;
     bool is_enabled_ = false;
+    long desktop_center_x_ = 0;
+    long desktop_center_y_ = 0;
 
     int prev_knob_l_ = 0;
     int prev_knob_r_ = 0;

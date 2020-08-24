@@ -15,6 +15,13 @@ MainWindow::MainWindow(const wxString &title,
     profiles_ = SVCConfigParser().ParseProfiles();
     RefreshProfileChoice();
     SelectProfile(0);
+
+    // Calc desktop center
+    auto desktop = GetDesktopWindow();
+    RECT rect;
+    GetWindowRect(desktop, &rect);
+    desktop_center_x_ = rect.right;
+    desktop_center_y_ = rect.bottom;
 }
 
 void MainWindow::InitGUI() {
@@ -73,6 +80,7 @@ void MainWindow::InitGUI() {
 void MainWindow::OnShowConfig(wxCommandEvent &event) {
     Disable();
     ConfigDialog dialog(nullptr, profiles_, current_profile_index_);
+    //MouseBindingDialog dialog(nullptr, RAWINPUTDEVICELIST());
     dialog.ShowModal();
     if (dialog.IsEdited()) {
         profiles_ = dialog.GetProfiles();
@@ -179,8 +187,17 @@ void MainWindow::SendKnobKey(const SVCKnobBindInfo& info, int *prev_status) {
      *  1 = turned to right
      * -1 = turned to left
      */
-    auto& diff_knob = knob_recorders_[info.device_list.hDevice]
+    long diff_knob = 0;
+    if (info.type == HID)
+        diff_knob = knob_recorders_[info.device_list.hDevice]
                         .GetDifference()[HIDUsagePair(info.usage_page, info.usage_id)];
+    else {
+        auto state = fetcher_.GetMouseState(info.device_list.hDevice);
+        if (info.usage_id == 0x30)
+            diff_knob = state.GetXDifferences();
+        else
+            diff_knob = state.GetYDifferences();
+    }
     bool turning_r;
     if (diff_knob > 0) {
         if (info.increase_direction == Right) {
@@ -196,8 +213,10 @@ void MainWindow::SendKnobKey(const SVCKnobBindInfo& info, int *prev_status) {
         }
         // When stopped
     } else {
-        SendKeyUp(info.l_key);
-        SendKeyUp(info.r_key);
+        if (*prev_status == 1)
+            SendKeyUp(info.r_key);
+        else if (*prev_status == -1)
+            SendKeyUp(info.l_key);
         *prev_status = 0;
         return;
     }
@@ -258,6 +277,7 @@ void MainWindow::OnTimer(wxTimerEvent &event) {
 
     if (!is_enabled_)
         return;
+
     auto current_profile = profiles_[current_profile_index_];
     // Set all devices states
     for (auto& device : fetcher_.GetRegisteredDevices()) {
@@ -286,5 +306,13 @@ void MainWindow::OnTimer(wxTimerEvent &event) {
     // Extra buttons
     for (auto& ex_bt : current_profile.extra_buttons) {
         SendButtonKey(ex_bt.second);
+    }
+    fetcher_.GetMouseState(current_profile.knob_l.device_list.hDevice).ResetDifferences();
+    fetcher_.GetMouseState(current_profile.knob_r.device_list.hDevice).ResetDifferences();
+
+    // Set cursor to center if using mouse input as knob
+    if (current_profile.knob_l.type == Mouse
+     || current_profile.knob_r.type == Mouse) {
+        SetCursorPos(desktop_center_x_, desktop_center_y_);
     }
 }

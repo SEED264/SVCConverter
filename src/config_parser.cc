@@ -109,7 +109,7 @@ SVCControllBindProfile SVCConfigParser::CreateDefaultProfile() {
     return profile;
 }
 
-void SVCConfigParser::ParseButtonBindInfo(const nlohmann::json &config,
+void SVCConfigParser::ParseButtonBindInfo(nlohmann::json &config,
                                           SVCButtonBindInfo *out_info,
                                           const RawInputDeviceManager &device_manager) {
     // Do nothing if config isn't object
@@ -120,12 +120,13 @@ void SVCConfigParser::ParseButtonBindInfo(const nlohmann::json &config,
     ParseKey(config["key"], &out_info->key);
 }
 
-void SVCConfigParser::ParseKnobBindInfo(const nlohmann::json &config,
+void SVCConfigParser::ParseKnobBindInfo(nlohmann::json &config,
                                         SVCKnobBindInfo *out_info,
                                         const RawInputDeviceManager &device_manager) {
     // Do nothing if config isn't object
     if (!config.is_object())
         return;
+    ParseKnobDeviceType(config["type"], &out_info->type);
     ParseDevice(config["device"]["device_name"], &out_info->device_list, device_manager);
     GetUsage(config, &out_info->usage_page, &out_info->usage_id);
     ParseKey(config["l_key"], &out_info->l_key);
@@ -147,6 +148,17 @@ void SVCConfigParser::ParseDevice(const nlohmann::json &config,
             break;
         }
     }
+}
+
+void SVCConfigParser::ParseKnobDeviceType(const nlohmann::json& config,
+                                          SVCKnobDeviceType* out_device_type) {
+    if (!config.is_string())
+        return;
+    auto device_type_str = config.get<std::string>();
+    if (device_type_str == "Mouse")
+        *out_device_type = Mouse;
+    else if (device_type_str == "HID")
+        *out_device_type = HID;
 }
 
 void SVCConfigParser::ParseKey(const nlohmann::json &config, unsigned char *out_key) {
@@ -189,6 +201,7 @@ void SVCConfigParser::DumpButtonBindInfo(nlohmann::json &out_config,
 
 void SVCConfigParser::DumpKnobBindInfo(nlohmann::json &out_config,
                                        const SVCKnobBindInfo &info) {
+    DumpKnobDeviceType(out_config["type"], info.type);
     out_config["device"]["device_name"] = GetHIDDeviceName(info.device_list);
     out_config["device"]["product_name"] = GetHIDDeviceName(info.device_list);
     out_config["usage_page"] = info.usage_page;
@@ -196,6 +209,20 @@ void SVCConfigParser::DumpKnobBindInfo(nlohmann::json &out_config,
     out_config["l_key"] = info.l_key;
     out_config["r_key"] = info.r_key;
     DumpKnobIncreaseDirection(out_config["direction"], info.increase_direction);
+}
+
+void SVCConfigParser::DumpKnobDeviceType(nlohmann::json& out_config,
+                                         SVCKnobDeviceType device_type) {
+    switch (device_type) {
+    case Mouse: {
+        out_config = "Mouse";
+        break;
+    }
+    case HID: {
+        out_config = "HID";
+        break;
+    }
+    }
 }
 
 void SVCConfigParser::DumpKnobIncreaseDirection(nlohmann::json &out_config,
