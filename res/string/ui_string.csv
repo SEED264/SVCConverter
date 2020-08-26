@@ -27,4 +27,4 @@ text_binding_mouse,Keep turning knob (mouse input) to right and click OK to bind
 label_target_device,Target device : ,対象デバイス : 
 label_pressed_button,Pressed button : ,押されたボタン : 
 label_most_turned_knob,Most turned knob : ,一番回されたつまみ : 
-label_pressed_key,Pressed key : ,押されたキー
+label_pressed_key,Pressed key : ,押されたキー : 
