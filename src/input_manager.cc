@@ -39,6 +39,31 @@ void RawInputButtonState::SetAllUsageReleased(USHORT usage_page) {
     }
 }
 
+void RawInputMouseState::SetMouseState(const RAWMOUSE& mouse) {
+    switch (mouse.usFlags) {
+    case MOUSE_MOVE_RELATIVE: {
+        x_differences_ += mouse.lLastX;
+        y_differences_ += mouse.lLastY;
+        break;
+    }
+    case MOUSE_MOVE_ABSOLUTE: {
+        if (!is_first_record_) {
+            x_differences_ += mouse.lLastX - x_values_;
+            y_differences_ += mouse.lLastY - y_values_;
+        }
+        x_values_ = mouse.lLastX;
+        y_values_ = mouse.lLastY;
+        is_first_record_ = true;
+        break;
+    }
+    }
+}
+
+void RawInputMouseState::ResetDifferences() {
+    x_differences_ = 0;
+    y_differences_ = 0;
+}
+
 void RawInputFetcher::AddDevice(RAWINPUTDEVICELIST device_list) {
     if (!IsDeviceContained(device_list.hDevice))
         registered_devices_.push_back(device_list);
@@ -51,7 +76,7 @@ void RawInputFetcher::AddDevice(RAWINPUTDEVICELIST device_list) {
     device.dwFlags = RIDEV_INPUTSINK;
     device.hwndTarget = GetHWND();
     RegisterRawInputDevices(&device, 1, sizeof(device));
-    device_states_[device_list.hDevice] = DeviceState();
+    //device_states_[device_list.hDevice] = DeviceState();
 }
 
 void RawInputFetcher::RemoveDevice(RAWINPUTDEVICELIST device_list) {
@@ -109,11 +134,8 @@ bool RawInputFetcher::IsDeviceContained(HANDLE device_handle) {
     return false;
 }
 
-void RawInputFetcher::InterpretRawInputData(PRAWINPUT raw_input) {
+void RawInputFetcher::InterpretRawInputHIDData(PRAWINPUT raw_input) {
     HANDLE device = raw_input->header.hDevice;
-    // Do nothing if device is not registerd
-    if (!IsDeviceContained(device))
-        return;
     // Create device state if doesn't exists
     if (!device_states_.count(device)) {
         device_states_[device] = DeviceState();
@@ -170,6 +192,11 @@ void RawInputFetcher::InterpretRawInputData(PRAWINPUT raw_input) {
     }
 }
 
+void RawInputFetcher::InterpretRawInputMouseData(PRAWINPUT raw_input) {
+    auto &state = mouse_states_[raw_input->header.hDevice];
+    state.SetMouseState(raw_input->data.mouse);
+}
+
 WXLRESULT RawInputFetcher::MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM lParam) {
     switch (nMsg) {
     case WM_INPUT: {
@@ -184,7 +211,21 @@ WXLRESULT RawInputFetcher::MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM 
         GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, raw_input,
                         &buffer_size, sizeof(RAWINPUTHEADER));
 
-        InterpretRawInputData(raw_input);
+        HANDLE device = raw_input->header.hDevice;
+        // Do nothing if device is not registerd
+        if (!IsDeviceContained(device))
+            return 0;
+
+        switch (raw_input->header.dwType) {
+        case RIM_TYPEMOUSE: {
+            InterpretRawInputMouseData(raw_input);
+            break;
+        }
+        case RIM_TYPEHID: {
+            InterpretRawInputHIDData(raw_input);
+            break;
+        }
+        }
 
         break;
     }
@@ -198,7 +239,7 @@ RawInputDeviceManager::RawInputDeviceManager() {
 
 void RawInputDeviceManager::FetchDevices() {
     // Init map of device lists
-    device_lists_ = RawInputDeviceListsMap();
+    hid_device_lists_ = RawInputDeviceListsMap();
     raw_device_lists_ = RawInputDeviceLists();
 
     // Get all device lists
@@ -212,22 +253,26 @@ void RawInputDeviceManager::FetchDevices() {
 
     // Divide up device lists to map
     for (auto &device_list : device_lists) {
+        if (device_list.dwType == RIM_TYPEMOUSE) {
+            mouse_device_lists_.push_back(device_list);
+            continue;
+        }
         auto key = GetDeviceUsage(device_list);
         // Create new lists if not exists
-        if (!device_lists_.count(key))
-            device_lists_[key] = RawInputDeviceLists();
+        if (!hid_device_lists_.count(key))
+            hid_device_lists_[key] = RawInputDeviceLists();
 
-        device_lists_[key].push_back(device_list);
+        hid_device_lists_[key].push_back(device_list);
     }
 }
 
-RawInputDeviceLists RawInputDeviceManager::GetDeviceLists(USHORT usage_page, USHORT usage_id) {
+RawInputDeviceLists RawInputDeviceManager::GetHIDDeviceLists(USHORT usage_page, USHORT usage_id) {
     HIDUsagePair usage(usage_page, usage_id);
     // Return empty lists if not found
-    if (!device_lists_.count(usage)) {
+    if (!hid_device_lists_.count(usage)) {
         return RawInputDeviceLists();
     }
-    return device_lists_[usage];
+    return hid_device_lists_[usage];
 }
 
 wxString GetHIDDeviceName(const RAWINPUTDEVICELIST &device_list) {

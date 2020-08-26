@@ -20,10 +20,25 @@ extern "C" {
 
 const unsigned long SVCUsageNotMapped = ULONG_MAX;
 
+class SVCSetting {
+public:
+    static auto GetCurreentLang() { return current_lang_; }
+    static void SetCurrentLang(const wxString &current_lang) {
+        current_lang_ = current_lang; }
+
+private:
+    static wxString current_lang_;
+};
+
 // Knob rotate direction when the value is increasing
 enum SVCKnobIncreaseDirection {
     Right,
     Left
+};
+
+enum SVCKnobDeviceType {
+    Mouse,
+    HID
 };
 
 // Information for binding the button to the key
@@ -42,6 +57,9 @@ struct SVCButtonBindInfo {
 
 // Information for binding the knob to the key
 struct SVCKnobBindInfo {
+    // Knob device type
+    SVCKnobDeviceType type = HID;
+
     // RawInput device list
     RAWINPUTDEVICELIST device_list = { .hDevice = nullptr };
 

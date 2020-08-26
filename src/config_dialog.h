@@ -72,9 +72,10 @@ private:
                          const wxString &product_name, USHORT usage_page, USHORT usage_id,
                          unsigned char key);
 
-    void SetButton(SVCButtonBindInfo &info);
-    void SetKnob(SVCKnobBindInfo &info);
-    void SetKey(unsigned char *out_key);
+    bool SetButton(SVCButtonBindInfo &info);
+    bool SetKnob(SVCKnobBindInfo &info);
+    bool SetKnobAsMouse(SVCKnobBindInfo &info);
+    bool SetKey(unsigned char *out_key);
     void AddExtraButton();
     void RemoveExtraButton();
     void SyncExtraButtonView();
@@ -89,6 +90,7 @@ private:
     void OnRemoveExtraButton(wxCommandEvent &event);
     void OnSelectButtonGrid(wxGridEvent &event);
     void OnSelectKnobGrid(wxGridEvent &event);
+    void OnSelectKnobGridAsMouse(wxGridEvent &event);
     void OnSelectExtraButtonGrid(wxGridEvent &event);
     void ValidateExtraButtonName(wxGridEvent &event);
     void SetCursorToRowHead(wxGridEvent &event);

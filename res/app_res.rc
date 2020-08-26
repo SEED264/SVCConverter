@@ -10,3 +10,5 @@ BT_C PNG "image/LED_BT-C.png"
 BT_D PNG "image/LED_BT-D.png"
 FX_L PNG "image/LED_FX-L.png"
 FX_R PNG "image/LED_FX-R.png"
+
+UI_STRING CSV "string/ui_string.csv"

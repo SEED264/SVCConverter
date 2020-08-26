@@ -13,6 +13,7 @@
 #include "input_manager.h"
 #include "label_string.h"
 #include "binding_dialog.h"
+#include "util_function.h"
 
 ConfigDialog::ConfigDialog(wxWindow *parent,
                            const std::vector<SVCControllBindProfile> &profiles,
@@ -45,12 +46,17 @@ void ConfigDialog::InitGUI() {
 
     choice_profile_ = new wxChoice(panel, ID_CHOICE_PROFILE, wxDefaultPosition, wxDefaultSize,
                                    wxArrayString());
-    auto *button_add_profile = new wxButton(panel, ID_BUTTON_PROFILE_ADD, "Add");
-    auto *button_remove_profile = new wxButton(panel, ID_BUTTON_PROFILE_REMOVE, "Remove");
-    auto *button_rename_profile = new wxButton(panel, ID_BUTTON_PROFILE_RENAME, "Rename");
+    auto *button_add_profile = new wxButton(panel, ID_BUTTON_PROFILE_ADD,
+                                            GetUIString("button_add"));
+    auto *button_remove_profile = new wxButton(panel, ID_BUTTON_PROFILE_REMOVE,
+                                               GetUIString("button_remove"));
+    auto *button_rename_profile = new wxButton(panel, ID_BUTTON_PROFILE_RENAME,
+                                               GetUIString("button_rename"));
 
-    auto *button_extra_add = new wxButton(panel, ID_BUTTON_EXTRA_ADD, "Add");
-    auto *button_extra_remove = new wxButton(panel, ID_BUTTON_EXTRA_REMOVE, "Remove");
+    auto *button_extra_add = new wxButton(panel, ID_BUTTON_EXTRA_ADD,
+                                          GetUIString("button_add"));
+    auto *button_extra_remove = new wxButton(panel, ID_BUTTON_EXTRA_REMOVE,
+                                             GetUIString("button_remove"));
 
     // Create grid
     grid_knob_->CreateGrid(4, 4);
@@ -82,16 +88,16 @@ void ConfigDialog::InitGUI() {
     }
 
     // Set col size
-    grid_knob_->SetColSize(0, 100);
-    grid_knob_->SetColSize(1, 180);
+    grid_knob_->SetColSize(0, 120);
+    grid_knob_->SetColSize(1, 200);
     grid_knob_->SetColSize(2, 100);
     grid_knob_->SetColSize(3, 100);
-    grid_button_->SetColSize(0, 100);
-    grid_button_->SetColSize(1, 180);
+    grid_button_->SetColSize(0, 120);
+    grid_button_->SetColSize(1, 200);
     grid_button_->SetColSize(2, 100);
     grid_button_->SetColSize(3, 100);
-    grid_extra_button_->SetColSize(0, 100);
-    grid_extra_button_->SetColSize(1, 180);
+    grid_extra_button_->SetColSize(0, 120);
+    grid_extra_button_->SetColSize(1, 200);
     grid_extra_button_->SetColSize(2, 100);
     grid_extra_button_->SetColSize(3, 100);
 
@@ -106,17 +112,17 @@ void ConfigDialog::InitGUI() {
 
     // Set grid label
     grid_knob_->SetColLabelValue(0, "");
-    grid_knob_->SetColLabelValue(1, "Controller");
-    grid_knob_->SetColLabelValue(2, "Input usage");
-    grid_knob_->SetColLabelValue(3, "Key");
+    grid_knob_->SetColLabelValue(1, GetUIString("grid_label_config_controller"));
+    grid_knob_->SetColLabelValue(2, GetUIString("grid_label_config_input"));
+    grid_knob_->SetColLabelValue(3, GetUIString("grid_label_config_key"));
     grid_button_->SetColLabelValue(0, "");
-    grid_button_->SetColLabelValue(1, "Controller");
-    grid_button_->SetColLabelValue(2, "Input usage");
-    grid_button_->SetColLabelValue(3, "Key");
+    grid_button_->SetColLabelValue(1, GetUIString("grid_label_config_controller"));
+    grid_button_->SetColLabelValue(2, GetUIString("grid_label_config_input"));
+    grid_button_->SetColLabelValue(3, GetUIString("grid_label_config_key"));
     grid_extra_button_->SetColLabelValue(0, "");
-    grid_extra_button_->SetColLabelValue(1, "Controller");
-    grid_extra_button_->SetColLabelValue(2, "Input usage");
-    grid_extra_button_->SetColLabelValue(3, "Key");
+    grid_extra_button_->SetColLabelValue(1, GetUIString("grid_label_config_controller"));
+    grid_extra_button_->SetColLabelValue(2, GetUIString("grid_label_config_input"));
+    grid_extra_button_->SetColLabelValue(3, GetUIString("grid_label_config_key"));
 
     // Set grid size
     grid_knob_->SetSize(grid_knob_->GetVirtualSize());
@@ -128,9 +134,12 @@ void ConfigDialog::InitGUI() {
     auto *sizer_profile = new wxBoxSizer(wxHORIZONTAL);
     auto *sizer_grid = new wxBoxSizer(wxVERTICAL);
     auto *sizer_extra_button = new wxBoxSizer(wxHORIZONTAL);
-    auto *group_knob = new wxStaticBoxSizer(wxVERTICAL, panel, "Knobs");
-    auto *group_button = new wxStaticBoxSizer(wxVERTICAL, panel, "Buttons");
-    auto *group_extra_button = new wxStaticBoxSizer(wxVERTICAL, panel, "Extra buttons");
+    auto *group_knob = new wxStaticBoxSizer(wxVERTICAL, panel,
+                                            GetUIString("label_knobs"));
+    auto *group_button = new wxStaticBoxSizer(wxVERTICAL, panel,
+                                              GetUIString("label_buttons"));
+    auto *group_extra_button = new wxStaticBoxSizer(wxVERTICAL, panel,
+                                                    GetUIString("label_extra_buttons"));
     // Layout
     sizer_profile->Add(choice_profile_,       1, wxEXPAND | wxALL, 2);
     sizer_profile->Add(button_add_profile,    0,            wxALL, 2);
@@ -165,6 +174,8 @@ void ConfigDialog::InitGUI() {
     Bind(wxEVT_GRID_CELL_LEFT_CLICK, &ConfigDialog::SetCursorToRowHead, this);
     Bind(wxEVT_GRID_CELL_LEFT_DCLICK, &ConfigDialog::OnSelectKnobGrid, this,
          ID_GRID_KNOB);
+    Bind(wxEVT_GRID_CELL_RIGHT_DCLICK, &ConfigDialog::OnSelectKnobGridAsMouse, this,
+         ID_GRID_KNOB);
     Bind(wxEVT_GRID_CELL_LEFT_DCLICK, &ConfigDialog::OnSelectButtonGrid, this,
          ID_GRID_BUTTON);
     Bind(wxEVT_GRID_CELL_LEFT_DCLICK, &ConfigDialog::OnSelectExtraButtonGrid, this,
@@ -176,7 +187,7 @@ void ConfigDialog::InitGUI() {
     Bind(wxEVT_GRID_RANGE_SELECT, &ConfigDialog::ClearRangeSelection, this);
     Bind(wxEVT_TIMER, &ConfigDialog::OnTimer, this, timer_.GetId());
 
-    timer_.Start(33);
+    timer_.Start(1000 / 30);
 }
 
 void ConfigDialog::InitImages() {
@@ -283,14 +294,38 @@ void ConfigDialog::SelectProfile(unsigned int profile_index) {
 
     auto &knob_l = current_profile_->knob_l;
     auto &knob_r = current_profile_->knob_r;
-    SetProfileToRow(grid_knob_, 0, "Knob L (Turn L)", GetHIDProductName(knob_l.device_list),
+    wxString knob_l_product_name;
+    if (knob_l.type == HID)
+        knob_l_product_name = GetHIDProductName(knob_l.device_list);
+    else
+        knob_l_product_name = "Mouse";
+    wxString knob_r_product_name;
+    if (knob_r.type == HID)
+        knob_r_product_name = GetHIDProductName(knob_r.device_list);
+    else
+        knob_r_product_name = "Mouse";
+    SetProfileToRow(grid_knob_, 0, GetUIString("label_knob_ll"),
+                    knob_l_product_name,
                     knob_l.usage_page, knob_l.usage_id, knob_l.l_key);
-    SetProfileToRow(grid_knob_, 1, "Knob L (Turn R)", GetHIDProductName(knob_l.device_list),
+    SetProfileToRow(grid_knob_, 1, GetUIString("label_knob_lr"),
+                    knob_l_product_name,
                     knob_l.usage_page, knob_l.usage_id, knob_l.r_key);
-    SetProfileToRow(grid_knob_, 2, "Knob R (Turn L)", GetHIDProductName(knob_r.device_list),
+    SetProfileToRow(grid_knob_, 2, GetUIString("label_knob_rl"),
+                    knob_r_product_name,
                     knob_r.usage_page, knob_r.usage_id, knob_r.l_key);
-    SetProfileToRow(grid_knob_, 3, "Knob R (Turn R)", GetHIDProductName(knob_r.device_list),
+    SetProfileToRow(grid_knob_, 3, GetUIString("label_knob_rr"),
+                    knob_r_product_name,
                     knob_r.usage_page, knob_r.usage_id, knob_r.r_key);
+    if (knob_l.type == Mouse) {
+        auto direction_str = (knob_l.usage_id == 0x30) ? "X" : "Y";
+        grid_knob_->SetCellValue(0, 2, direction_str);
+        grid_knob_->SetCellValue(1, 2, direction_str);
+    }
+    if (knob_r.type == Mouse) {
+        auto direction_str = (knob_r.usage_id == 0x30) ? "X" : "Y";
+        grid_knob_->SetCellValue(2, 2, direction_str);
+        grid_knob_->SetCellValue(3, 2, direction_str);
+    }
 
     auto &start = current_profile_->start;
     auto &bt_a = current_profile_->bt_a;
@@ -348,36 +383,53 @@ void ConfigDialog::SetProfileToRow(wxGrid *grid, int row, const wxString &label,
     grid->SetCellValue(row, 3, key_str[key]);
 }
 
-void ConfigDialog::SetButton(SVCButtonBindInfo &info) {
+bool ConfigDialog::SetButton(SVCButtonBindInfo &info) {
     ButtonBindingDialog dialog(nullptr, info.device_list, RawInputDeviceManager());
     dialog.ShowModal();
     if (!dialog.IsButtonBinded())
-        return;
+        return false;
     auto &bind_info = dialog.GetButtonBindingInfo();
     info.device_list = bind_info.device_list;
     info.usage_page = bind_info.usage_page;
     info.usage_id = bind_info.usage_id;
+    return true;
 }
 
-void ConfigDialog::SetKnob(SVCKnobBindInfo &info) {
+bool ConfigDialog::SetKnob(SVCKnobBindInfo &info) {
     KnobBindingDialog dialog(nullptr, info.device_list, RawInputDeviceManager());
     dialog.ShowModal();
     if (!dialog.IsKnobBinded())
-        return;
+        return false;
     auto &bind_info = dialog.GetKnobBindingInfo();
     info.device_list = bind_info.device_list;
     info.increase_direction = bind_info.increase_direction;
     info.usage_page = bind_info.usage_page;
     info.usage_id = bind_info.usage_id;
+    return true;
 }
 
-void ConfigDialog::SetKey(unsigned char *out_key) {
+bool ConfigDialog::SetKnobAsMouse(SVCKnobBindInfo &info) {
+    MouseBindingDialog dialog(nullptr, info.device_list, RawInputDeviceManager());
+    dialog.ShowModal();
+    if (!dialog.IsKnobBinded())
+        return false;
+    auto &bind_info = dialog.GetKnobBindingInfo();
+    info.type = Mouse;
+    info.device_list = bind_info.device_list;
+    info.increase_direction = bind_info.increase_direction;
+    info.usage_page = bind_info.usage_page;
+    info.usage_id = bind_info.usage_id;
+    return true;
+}
+
+bool ConfigDialog::SetKey(unsigned char *out_key) {
     KeyBindingDialog dialog(nullptr);
     dialog.ShowModal();
     if (!dialog.IsKeyBinded())
-        return;
+        return false;
     auto key = dialog.GetKey();
     *out_key = key;
+    return true;
 }
 
 void ConfigDialog::AddExtraButton() {
@@ -507,7 +559,7 @@ void ConfigDialog::OnRemoveProfile(wxCommandEvent &event) {
         return;
     int index = choice_profile_->GetSelection();
     auto &profile_name = profiles_[index].profile_name;
-    auto message = wxString::Format("Are you sure you want to erase %s?", profile_name);
+    auto message = wxString::Format(GetUIString("text_confirm_to_erase"), profile_name);
     auto confirm = wxMessageBox(message, "Confirm", wxYES_NO);
     if (confirm != wxYES)
         return;
@@ -565,7 +617,7 @@ void ConfigDialog::OnSelectButtonGrid(wxGridEvent &event) {
     auto col = event.GetCol();
     auto *ev_obj = reinterpret_cast<wxGrid*>(event.GetEventObject());
     ev_obj->SetGridCursor(row, 0);
-    SVCButtonBindInfo *current_button;
+    SVCButtonBindInfo *current_button = nullptr;
     switch (row) {
     case 0: {
         current_button = &current_profile_->start;
@@ -599,7 +651,8 @@ void ConfigDialog::OnSelectButtonGrid(wxGridEvent &event) {
     switch (col) {
     case 1:
     case 2: {
-        SetButton(*current_button);
+        if (!SetButton(*current_button))
+            return;
         auto product_name = GetHIDProductName(current_button->device_list);
         auto usage_str = wxString::Format("<0x%02x, 0x%02x>",
                                           current_button->usage_page, current_button->usage_id);
@@ -609,7 +662,8 @@ void ConfigDialog::OnSelectButtonGrid(wxGridEvent &event) {
         break;
     }
     case 3: {
-        SetKey(&current_button->key);
+        if (!SetKey(&current_button->key))
+            return;
         ev_obj->SetCellValue(row, col, key_str[current_button->key]);
         break;
     }
@@ -628,7 +682,8 @@ void ConfigDialog::OnSelectKnobGrid(wxGridEvent &event) {
     switch (col) {
     case 1:
     case 2: {
-        SetKnob(current_knob);
+        if (!SetKnob(current_knob))
+            return;
         auto product_name = GetHIDProductName(current_knob.device_list);
         auto usage_str = wxString::Format("<0x%02x, 0x%02x>",
                                           current_knob.usage_page, current_knob.usage_id);
@@ -649,7 +704,49 @@ void ConfigDialog::OnSelectKnobGrid(wxGridEvent &event) {
     case 3: {
         bool is_l_key = (row % 2) == 0;
         auto &key = (is_l_key) ? current_knob.l_key : current_knob.r_key;
-        SetKey(&key);
+        if (!SetKey(&key))
+            return;
+        ev_obj->SetCellValue(row, col, key_str[key]);
+        break;
+    }
+    }
+    is_edited_ = true;
+}
+
+void ConfigDialog::OnSelectKnobGridAsMouse(wxGridEvent &event) {
+    auto row = event.GetRow();
+    auto col = event.GetCol();
+    auto *ev_obj = reinterpret_cast<wxGrid*>(event.GetEventObject());
+    ev_obj->SetGridCursor(row, 0);
+    bool is_l_knob = row == 0 || row == 1;
+    auto &current_knob = (is_l_knob) ? current_profile_->knob_l
+        : current_profile_->knob_r;
+    switch (col) {
+    case 1:
+    case 2: {
+        if (!SetKnobAsMouse(current_knob))
+            return;
+        auto product_name = "Mouse";
+        auto direction_str = (current_knob.usage_id == 0x30) ? "X" : "Y";
+        if (is_l_knob) {
+            ev_obj->SetCellValue(0, 1, product_name);
+            ev_obj->SetCellValue(1, 1, product_name);
+            ev_obj->SetCellValue(0, 2, direction_str);
+            ev_obj->SetCellValue(1, 2, direction_str);
+        } else {
+            ev_obj->SetCellValue(2, 1, product_name);
+            ev_obj->SetCellValue(3, 1, product_name);
+            ev_obj->SetCellValue(2, 2, direction_str);
+            ev_obj->SetCellValue(3, 2, direction_str);
+        }
+        fetcher_->AddDevice(current_knob.device_list);
+        break;
+    }
+    case 3: {
+        bool is_l_key = (row % 2) == 0;
+        auto &key = (is_l_key) ? current_knob.l_key : current_knob.r_key;
+        if (!SetKey(&key))
+            return;
         ev_obj->SetCellValue(row, col, key_str[key]);
         break;
     }
@@ -667,13 +764,15 @@ void ConfigDialog::OnSelectExtraButtonGrid(wxGridEvent &event) {
     switch (col) {
     case 1:
     case 2: {
-        SetButton(current_ex_bt);
+        if (!SetButton(current_ex_bt))
+            return;
         SyncExtraButtonView();
         fetcher_->AddDevice(current_ex_bt.device_list);
         break;
     }
     case 3: {
-        SetKey(&current_ex_bt.key);
+        if (!SetKey(&current_ex_bt.key))
+            return;
         SyncExtraButtonView();
         break;
     }
@@ -699,7 +798,7 @@ void ConfigDialog::ValidateExtraButtonName(wxGridEvent &event) {
         return;
     }
     // Show warning dialog
-    wxMessageBox("Extra button labels must be unique", "Warning",
+    wxMessageBox(GetUIString("text_warn_extra_button_unique"), "Warning",
                  wxOK | wxICON_EXCLAMATION);
     // Enter label edit
     grid_extra_button_->SetGridCursor(row, 0);
@@ -724,7 +823,7 @@ ProfileNameDialog::ProfileNameDialog(wxWindow *parent, const wxString &default_n
 
     auto *sizer = new wxBoxSizer(wxVERTICAL);
 
-    auto *text = new wxStaticText(panel, wxID_ANY, "Enter profile name. It must be unique.");
+    auto *text = new wxStaticText(panel, wxID_ANY, GetUIString("text_enter_profile_name"));
     edit_name_ = new wxTextCtrl(panel, wxID_ANY, default_name);
     auto *button_ok = new wxButton(panel, ID_BUTTON_OK, "&OK");
 
@@ -733,7 +832,8 @@ ProfileNameDialog::ProfileNameDialog(wxWindow *parent, const wxString &default_n
     sizer->Add(button_ok, 0, wxALIGN_RIGHT | wxBOTTOM | wxALL, 4);
 
     panel->SetSizer(sizer);
-    SetSize(240, 120);
+    SetMinSize(wxSize(240, 120));
+    sizer->SetSizeHints(this);
 
     Bind(wxEVT_SHOW, [&](wxShowEvent &) {
             edit_name_->SetSelection(-1, -1);

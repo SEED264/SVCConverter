@@ -1,3 +1,6 @@
 [submodule "submodule/lodepng"]
 	path = submodule/lodepng
 	url = git@github.com:lvandeve/lodepng.git
+[submodule "submodule/rapidcsv"]
+	path = submodule/rapidcsv
+	url = git@github.com:d99kris/rapidcsv.git

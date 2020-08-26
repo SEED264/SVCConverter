@@ -2,8 +2,9 @@
 #include "analog_value_dialog.h"
 #include "config_dialog.h"
 #include "binding_dialog.h"
-
 #include "config_parser.h"
+#include "setting_parser.h"
+#include "util_function.h"
 
 MainWindow::MainWindow(const wxString &title,
                        const wxPoint &pos,
@@ -11,10 +12,40 @@ MainWindow::MainWindow(const wxString &title,
         : wxFrame(nullptr, wxID_ANY, title, pos, size),
           timer_(this),
           fetcher_(this) {
+    InitMenu();
     InitGUI();
     profiles_ = SVCConfigParser().ParseProfiles();
     RefreshProfileChoice();
     SelectProfile(0);
+    SelectLanguage(SVCSetting::GetCurreentLang());
+
+    // Calc desktop center
+    auto desktop = GetDesktopWindow();
+    RECT rect;
+    GetWindowRect(desktop, &rect);
+    desktop_center_x_ = rect.right;
+    desktop_center_y_ = rect.bottom;
+}
+
+void MainWindow::InitMenu() {
+    menu_bar_ = new wxMenuBar;
+    auto *menu_lang = new wxMenu;
+
+    int i = 0;
+    for (auto &lang : GetLangIDs()) {
+        int id = 100 + i;
+        auto lang_name = GetUIString("language_name", lang);
+        menu_lang->AppendRadioItem(id, lang_name);
+        // Check if current language
+        if (lang == SVCSetting::GetCurreentLang())
+            menu_lang->Check(id, true);
+        // Bind event
+        Bind(wxEVT_MENU, &MainWindow::OnSelectLanguage, this, id);
+        ++i;
+    }
+    menu_bar_->Append(menu_lang, GetUIString("menu_language"));
+
+    SetMenuBar(menu_bar_);
 }
 
 void MainWindow::InitGUI() {
@@ -23,51 +54,61 @@ void MainWindow::InitGUI() {
     auto *panel = new wxPanel(this, wxID_ANY);
     choice_profile_ = new wxChoice(panel, ID_CHOICE_PROFILE, wxDefaultPosition,
                                    wxDefaultSize, wxArrayString());
-    auto *button_quit = new wxButton(panel, wxID_EXIT, "&Quit");
-    auto *button_switch = new wxButton(panel, ID_BUTTON_SWITCH, "&Switch");
-    auto *text_label_is_enabled = new wxStaticText(panel, wxID_ANY, "Convert : ");
+    button_quit_ = new wxButton(panel, wxID_EXIT, "");
+    text_label_is_enabled_ = new wxStaticText(panel, wxID_ANY, "");
+    auto *text_label_switch_key = new wxStaticText(panel, wxID_ANY, "[Ctrl + F12]");
     text_is_enabled_ = new wxStaticText(panel, wxID_ANY, "OFF");
-    auto *button_config = new wxButton(panel, ID_BUTTON_CONFIG, "&Config");
+    button_config_ = new wxButton(panel, ID_BUTTON_CONFIG, "");
 
     // Init boxsizer
-    auto *sizer_window = new wxBoxSizer(wxVERTICAL);
+    sizer_window_ = new wxBoxSizer(wxVERTICAL);
     auto *sizer_switch = new wxBoxSizer(wxHORIZONTAL);
     auto *sizer_bottom = new wxBoxSizer(wxHORIZONTAL);
 
     // Layout
-    sizer_switch->Add(text_label_is_enabled, 0);
+    sizer_switch->Add(text_label_is_enabled_, 0);
     sizer_switch->Add(text_is_enabled_,      0);
     sizer_switch->AddStretchSpacer();
-    sizer_switch->Add(button_switch   ,      0);
+    sizer_switch->Add(text_label_switch_key, 0);
 
-    sizer_bottom->Add(button_config, 0);
+    sizer_bottom->Add(button_config_, 0);
     sizer_bottom->AddStretchSpacer();
-    sizer_bottom->Add(button_quit,   0);
+    sizer_bottom->Add(button_quit_,   0);
 
-    sizer_window->Add(choice_profile_, 0, wxEXPAND | wxALL, 4);
-    sizer_window->Add(sizer_switch, 0, wxEXPAND | wxALL, 4);
-    sizer_window->AddStretchSpacer();
-    sizer_window->Add(sizer_bottom, 0, wxEXPAND | wxALL, 4);
+    sizer_window_->Add(choice_profile_, 0, wxEXPAND | wxALL, 4);
+    sizer_window_->Add(sizer_switch, 0, wxEXPAND | wxALL, 4);
+    sizer_window_->AddStretchSpacer();
+    sizer_window_->Add(sizer_bottom, 0, wxEXPAND | wxALL, 4);
 
-    panel->SetSizer(sizer_window);
-    sizer_window->SetSizeHints(this);
-    auto size = GetSize();
-    size.x *= 1.5;
-    size.y *= 1.2;
-    SetSize(size);
-
+    panel->SetSizer(sizer_window_);
     // Disable resize and maximize
     SetWindowStyle(GetWindowStyle() & ~wxMAXIMIZE_BOX & ~wxRESIZE_BORDER);
 
     // Bind events
     Bind(wxEVT_CLOSE_WINDOW , &MainWindow::OnClose, this);
     Bind(wxEVT_CHOICE, &MainWindow::OnChoice, this, ID_CHOICE_PROFILE);
-    Bind(wxEVT_BUTTON, [this](wxCommandEvent&){ Switch(); }, ID_BUTTON_SWITCH);
     Bind(wxEVT_BUTTON, &MainWindow::OnShowConfig, this,
         ID_BUTTON_CONFIG);
     Bind(wxEVT_BUTTON, [this](wxCommandEvent&){ Close(); }, wxID_EXIT);
     Bind(wxEVT_TIMER, &MainWindow::OnTimer, this, timer_.GetId());
     timer_.Start(1000 / 120);
+}
+
+void MainWindow::SelectLanguage(const wxString &lang_name) {
+    SVCSetting::SetCurrentLang(lang_name);
+    // Set UI strings
+    button_quit_->SetLabel(GetUIString("button_quit"));
+    text_label_is_enabled_->SetLabel(GetUIString("label_is_enabled"));
+    button_config_->SetLabel(GetUIString("button_config"));
+
+    // Set menu strings
+    menu_bar_->SetMenuLabel(MENU_POS_LANG, GetUIString("menu_language"));
+
+    sizer_window_->SetSizeHints(this);
+    auto size = GetSize();
+    size.x *= 1.3;
+    size.y *= 1.2;
+    SetSize(size);
 }
 
 void MainWindow::OnShowConfig(wxCommandEvent &event) {
@@ -179,8 +220,17 @@ void MainWindow::SendKnobKey(const SVCKnobBindInfo& info, int *prev_status) {
      *  1 = turned to right
      * -1 = turned to left
      */
-    auto& diff_knob = knob_recorders_[info.device_list.hDevice]
+    long diff_knob = 0;
+    if (info.type == HID)
+        diff_knob = knob_recorders_[info.device_list.hDevice]
                         .GetDifference()[HIDUsagePair(info.usage_page, info.usage_id)];
+    else {
+        auto state = fetcher_.GetMouseState(info.device_list.hDevice);
+        if (info.usage_id == 0x30)
+            diff_knob = state.GetXDifferences();
+        else
+            diff_knob = state.GetYDifferences();
+    }
     bool turning_r;
     if (diff_knob > 0) {
         if (info.increase_direction == Right) {
@@ -196,8 +246,10 @@ void MainWindow::SendKnobKey(const SVCKnobBindInfo& info, int *prev_status) {
         }
         // When stopped
     } else {
-        SendKeyUp(info.l_key);
-        SendKeyUp(info.r_key);
+        if (*prev_status == 1)
+            SendKeyUp(info.r_key);
+        else if (*prev_status == -1)
+            SendKeyUp(info.l_key);
         *prev_status = 0;
         return;
     }
@@ -231,6 +283,7 @@ void MainWindow::SendButtonKey(const SVCButtonBindInfo& info) {
 void MainWindow::SendKeyDown(unsigned char key) {
     SendKey(key, true);
 }
+
 void MainWindow::SendKeyUp(unsigned char key) {
     SendKey(key, false);
 }
@@ -239,8 +292,15 @@ void MainWindow::OnChoice(wxCommandEvent& event) {
     SelectProfile(choice_profile_->GetSelection());
 }
 
+void MainWindow::OnSelectLanguage(wxCommandEvent& event) {
+    auto lang_index = event.GetId() - 100;
+    auto lang = GetLangIDs()[lang_index];
+    SelectLanguage(lang);
+}
+
 void MainWindow::OnClose(wxCloseEvent &event) {
     Disable();
+    DumpSettings();
     Destroy();
 }
 
@@ -258,6 +318,7 @@ void MainWindow::OnTimer(wxTimerEvent &event) {
 
     if (!is_enabled_)
         return;
+
     auto current_profile = profiles_[current_profile_index_];
     // Set all devices states
     for (auto& device : fetcher_.GetRegisteredDevices()) {
@@ -286,5 +347,13 @@ void MainWindow::OnTimer(wxTimerEvent &event) {
     // Extra buttons
     for (auto& ex_bt : current_profile.extra_buttons) {
         SendButtonKey(ex_bt.second);
+    }
+    fetcher_.GetMouseState(current_profile.knob_l.device_list.hDevice).ResetDifferences();
+    fetcher_.GetMouseState(current_profile.knob_r.device_list.hDevice).ResetDifferences();
+
+    // Set cursor to center if using mouse input as knob
+    if (current_profile.knob_l.type == Mouse
+     || current_profile.knob_r.type == Mouse) {
+        SetCursorPos(desktop_center_x_, desktop_center_y_);
     }
 }

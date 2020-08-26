@@ -21,13 +21,14 @@ public:
     SVCControllBindProfile CreateDefaultProfile();
 
 private:
-    void ParseButtonBindInfo(const nlohmann::json &config, SVCButtonBindInfo *out_info,
+    void ParseButtonBindInfo(nlohmann::json &config, SVCButtonBindInfo *out_info,
                              const RawInputDeviceManager &device_manager);
-    void ParseKnobBindInfo(const nlohmann::json &config, SVCKnobBindInfo *out_info,
+    void ParseKnobBindInfo(nlohmann::json &config, SVCKnobBindInfo *out_info,
                            const RawInputDeviceManager &device_manager);
 
     void ParseDevice(const nlohmann::json &config, RAWINPUTDEVICELIST *out_device_list,
                      const RawInputDeviceManager &device_manager);
+    void ParseKnobDeviceType(const nlohmann::json &config, SVCKnobDeviceType *out_device_type);
     void ParseKey(const nlohmann::json &config, unsigned char *out_key);
     void ParseKnobIncreaseDirection(const nlohmann::json &config,
                                     SVCKnobIncreaseDirection *out_direction);
@@ -38,6 +39,7 @@ private:
     void DumpButtonBindInfo(nlohmann::json &out_config, const SVCButtonBindInfo &info);
     void DumpKnobBindInfo(nlohmann::json &out_config, const SVCKnobBindInfo &info);
 
+    void DumpKnobDeviceType(nlohmann::json &out_config, SVCKnobDeviceType device_type);
     void DumpKnobIncreaseDirection(nlohmann::json &out_config,
                                    SVCKnobIncreaseDirection direction);
 };
