@@ -1,5 +1,5 @@
 # SVCConverter
-[![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)](LICENSE/LICENSE)
+[![Packagist](https://img.shields.io/packagist/l/doctrine/orm.svg)](LICENSE)
 
 ## 使い方
 
