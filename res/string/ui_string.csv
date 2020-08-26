@@ -1,0 +1,30 @@
+ID,ENG,JP
+language_name,English,日本語
+menu_language,&Language,言語(&L)
+button_add,Add,追加
+button_config,&Config,コンフィグ (&C)
+button_quit,&Quit,終了(&Q)
+button_remove,Remove,削除
+button_rename,Rename,リネーム
+grid_label_config_controller,Controller,コントローラー
+grid_label_config_input,Input,入力
+grid_label_config_key,Key,キー
+label_knobs,Knob,つまみ
+label_buttons,Buttons,ボタン
+label_extra_buttons,Extra buttons,追加ボタン
+label_is_enabled,Convert : ,変換 : 
+label_knob_ll,Knob L (Turn L),左つまみ (左回転)
+label_knob_lr,Knob L (Turn R),左つまみ (右回転)
+label_knob_rl,Knob R (Turn L),右つまみ (左回転)
+label_knob_rr,Knob R (Turn R),右つまみ (右回転)
+text_confirm_to_erase,Are you sure you want to erase %s?,%s を削除してもよろしいですか？
+text_warn_extra_button_unique,Extra button labels must be unique.,追加ボタンのラベルは一意である必要があります。
+text_enter_profile_name,Enter profile name. It must be unique.,プロファイル名を入力してください。 これは一意である必要があります。
+text_binding_button,Press button and click OK to bind.,ボタンを押し、OKをクリックしてください。
+text_binding_knob,Keep turning knob to right and click OK to bind.,つまみをしばらく右に回し、OKをクリックしてください。
+text_binding_key,Press any key and click OK to bind.,どれかキーを押し、OKをクリックしてください。
+text_binding_mouse,Keep turning knob (mouse input) to right and click OK to bind.,つまみ(マウス入力)をしばらく右に回し、OKをクリックしてください。
+label_target_device,Target device : ,対象デバイス : 
+label_pressed_button,Pressed button : ,押されたボタン : 
+label_most_turned_knob,Most turned knob : ,一番回されたつまみ : 
+label_pressed_key,Pressed key : ,押されたキー

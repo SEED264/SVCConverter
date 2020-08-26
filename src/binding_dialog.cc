@@ -1,6 +1,7 @@
 #include "binding_dialog.h"
 #include "input_manager.h"
 #include "label_string.h"
+#include "util_function.h"
 
 ButtonBindingDialog::ButtonBindingDialog(
     wxWindow *parent,
@@ -37,10 +38,13 @@ ButtonBindingDialog::ButtonBindingDialog(
                                          wxDefaultSize, target_device_names);
     choice_select_device_->SetSelection(target_index);
 
-    auto *text_how_to_bind = new wxStaticText(panel, wxID_ANY, "Press button and click OK to bind.");
-    auto *text_label_target_device = new wxStaticText(panel, wxID_ANY, "Target device : ");
+    auto *text_how_to_bind = new wxStaticText(panel, wxID_ANY,
+                                              GetUIString("text_binding_button"));
+    auto *text_label_target_device = new wxStaticText(panel, wxID_ANY,
+                                                      GetUIString("label_target_device"));
     text_target_device_ = new wxStaticText(panel, wxID_ANY, product_name);
-    auto *text_label_pressed_button = new wxStaticText(panel, wxID_ANY, "Pressed button : ");
+    auto *text_label_pressed_button = new wxStaticText(panel, wxID_ANY,
+                                                       GetUIString("label_pressed_button"));
     text_pressed_button_ = new wxStaticText(panel, wxID_ANY, "");
     button_confirm_binding_ = new wxButton(panel, ID_BUTTON_CONFIRM_BINDING, "&OK");
 
@@ -194,11 +198,13 @@ KnobBindingDialog::KnobBindingDialog(
                                          wxDefaultSize, target_device_names);
     choice_select_device_->SetSelection(target_index);
 
-    auto *text_how_to_bind = new wxStaticText(panel, wxID_ANY, "Keep turning knob to right and click OK to bind.");
-    auto *text_label_target_device = new wxStaticText(panel, wxID_ANY, "Target device : ");
+    auto *text_how_to_bind = new wxStaticText(panel, wxID_ANY,
+                                              GetUIString("text_binding_knob"));
+    auto *text_label_target_device = new wxStaticText(panel, wxID_ANY,
+                                                      GetUIString("label_target_device"));
     text_target_device_ = new wxStaticText(panel, wxID_ANY, product_name);
     auto *text_label_most_turned_knob = new wxStaticText(panel, wxID_ANY,
-                                                         "Most turned knob : ");
+                                                         GetUIString("label_most_turned_knob"));
     text_most_turned_knob_ = new wxStaticText(panel, wxID_ANY, "");
     button_confirm_binding_ = new wxButton(panel, ID_BUTTON_CONFIRM_BINDING, "&OK");
 
@@ -330,9 +336,10 @@ KeyBindingDialog::KeyBindingDialog(wxWindow *parent)
 
     auto *panel = new wxPanel(this);
 
-    auto *text_how_to_bind = new wxStaticText(panel, wxID_ANY, "Press any key and click OK to bind.");
+    auto *text_how_to_bind = new wxStaticText(panel, wxID_ANY,
+                                              GetUIString("text_binding_key"));
     auto *text_label_pressed_key = new wxStaticText(panel, wxID_ANY,
-                                                    "Pressed key : ");
+                                                    GetUIString("label_pressed_key"));
     text_pressed_key_ = new wxTextCtrl(panel, wxID_ANY, "");
     button_confirm_binding_ = new wxButton(panel, ID_BUTTON_CONFIRM_BINDING, "OK");
 
@@ -449,11 +456,13 @@ MouseBindingDialog::MouseBindingDialog(
         wxDefaultSize, target_device_names);
     choice_select_device_->SetSelection(target_index);
 
-    auto *text_how_to_bind = new wxStaticText(panel, wxID_ANY, "Keep turning knob to right and click OK to bind.");
-    auto *text_label_target_device = new wxStaticText(panel, wxID_ANY, "Target device : ");
+    auto *text_how_to_bind = new wxStaticText(panel, wxID_ANY,
+                                              GetUIString("text_binding_mouse"));
+    auto *text_label_target_device = new wxStaticText(panel, wxID_ANY,
+                                                      GetUIString("label_terget_device"));
     text_target_device_ = new wxStaticText(panel, wxID_ANY, product_name);
     auto *text_label_most_turned_knob = new wxStaticText(panel, wxID_ANY,
-        "Most turned knob : ");
+                                                         GetUIString("label_most_turned_knob"));
     text_most_turned_knob_ = new wxStaticText(panel, wxID_ANY, "");
     button_confirm_binding_ = new wxButton(panel, ID_BUTTON_CONFIRM_BINDING, "&OK");
 
