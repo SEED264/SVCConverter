@@ -54,13 +54,21 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Hid
 )
 
-# Configure linker options
+# Configure conpiler and linker options
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(${PROJECT_NAME} PRIVATE /std:c++latest /utf-8 /w /MT /MP)
     target_link_options(${PROJECT_NAME} PRIVATE /SUBSYSTEM:WINDOWS)
 else()
+    target_compile_options(${PROJECT_NAME} PRIVATE -O3)
     target_link_options(${PROJECT_NAME} PRIVATE
-        # -static
         -s
         -mwindows)
 endif()
+
+# Install
+if (NOT CMAKE_INSTALL_PREFIX)
+    set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
+endif()
+
+install(TARGETS ${PROJECT_NAME} DESTINATION .)
+install(FILES Readme.md DESTINATION .)
