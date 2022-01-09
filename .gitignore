@@ -1,6 +1,8 @@
 ### Custom
+/.ccls-cache/
 /.vscode/*
 /build/*
+/build_vc/*
 
 
 ### https://raw.github.com/github/gitignore/18aa6d83774d514da479d73a4beb864cd4220231/C++.gitignore
