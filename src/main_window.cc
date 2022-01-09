@@ -305,9 +305,9 @@ void MainWindow::OnClose(wxCloseEvent &event) {
 }
 
 void MainWindow::OnTimer(wxTimerEvent &event) {
-    SHORT ctrl_pressing = GetAsyncKeyState(VK_CONTROL);
+    SHORT ctrl_pressing = GetAsyncKeyState(VK_CONTROL) & 0x8000;
     // Detect hotkey press
-    SHORT f12_pressing = GetAsyncKeyState(VK_F12);
+    SHORT f12_pressing = GetAsyncKeyState(VK_F12) & 0x8000;
     static SHORT f12_prev = 0;
     bool f12_down = (!f12_prev && f12_pressing);
     f12_prev = f12_pressing;
