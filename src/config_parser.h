@@ -26,7 +26,11 @@ private:
     void ParseKnobBindInfo(nlohmann::json &config, SVCKnobBindInfo *out_info,
                            const RawInputDeviceManager &device_manager);
 
-    void ParseDevice(const nlohmann::json &config, RAWINPUTDEVICELIST *out_device_list,
+    void ParseDevice(const nlohmann::json &device_name_config,
+                     const nlohmann::json &product_name_config,
+                     RAWINPUTDEVICELIST *out_device_list,
+                     std::string *out_device_name,
+                     std::string *out_product_name,
                      const RawInputDeviceManager &device_manager);
     void ParseKnobDeviceType(const nlohmann::json &config, SVCKnobDeviceType *out_device_type);
     void ParseKey(const nlohmann::json &config, unsigned char *out_key);

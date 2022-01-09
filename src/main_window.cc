@@ -91,7 +91,7 @@ void MainWindow::InitGUI() {
         ID_BUTTON_CONFIG);
     Bind(wxEVT_BUTTON, [this](wxCommandEvent&){ Close(); }, wxID_EXIT);
     Bind(wxEVT_TIMER, &MainWindow::OnTimer, this, timer_.GetId());
-    timer_.Start(1000 / 120);
+    timer_.Start(1000 / 1000);
 }
 
 void MainWindow::SelectLanguage(const wxString &lang_name) {
@@ -273,7 +273,6 @@ void MainWindow::SendButtonKey(const SVCButtonBindInfo& info) {
     auto &states_bt = button_recorders_[info.device_list.hDevice];
     if (states_bt.GetTriggeredStates()[info.usage_page][info.usage_id]) {
         SendKeyDown(info.key);
-    OutputDebugString(wxString::Format("Key pressed."));
     }
     if (states_bt.GetReleasedStates()[info.usage_page][info.usage_id]) {
         SendKeyUp(info.key);
@@ -305,9 +304,9 @@ void MainWindow::OnClose(wxCloseEvent &event) {
 }
 
 void MainWindow::OnTimer(wxTimerEvent &event) {
-    SHORT ctrl_pressing = GetAsyncKeyState(VK_CONTROL);
+    SHORT ctrl_pressing = GetAsyncKeyState(VK_CONTROL) & 0x8000;
     // Detect hotkey press
-    SHORT f12_pressing = GetAsyncKeyState(VK_F12);
+    SHORT f12_pressing = GetAsyncKeyState(VK_F12) & 0x8000;
     static SHORT f12_prev = 0;
     bool f12_down = (!f12_prev && f12_pressing);
     f12_prev = f12_pressing;

@@ -12,8 +12,8 @@
 class ButtonBindingDialog : public wxDialog {
 public:
     ButtonBindingDialog(wxWindow *parent,
-                           RAWINPUTDEVICELIST target_device,
-                           RawInputDeviceManager device_manager = RawInputDeviceManager());
+                        RAWINPUTDEVICELIST target_device,
+                        RawInputDeviceManager device_manager = RawInputDeviceManager());
     ~ButtonBindingDialog();
 
     auto IsButtonBinded() const { return is_button_binded_; }

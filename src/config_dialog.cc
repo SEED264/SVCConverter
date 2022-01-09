@@ -240,7 +240,7 @@ std::vector<unsigned char> ConfigDialog::LoadBinaryFile(const std::string &file_
 
 cv::Mat ConfigDialog::DecodeToMat(const std::vector<unsigned char> &source_image) {
     unsigned int width = 0, height = 0;
-    // OutputDebugString(wxString::Format("width : %i, height : %i", width, height));
+
     lodepng::State state;
     state.info_raw.colortype = LCT_RGB;
     std::vector<unsigned char> decoded_pixels;
@@ -262,7 +262,7 @@ cv::Mat ConfigDialog::DecodeToMat(const std::vector<unsigned char> &source_image
 wxBitmap ConfigDialog::ConvertToBitmap(const cv::Mat &source_image) {
     auto out_image = wxImage();
     auto size = source_image.size();
-    out_image.Create(size.width, size.height, 8);
+    out_image.Create(size.width, size.height);
     auto *pixels = out_image.GetData();
     auto *source_pixels = source_image.data;
     for (int y = 0; y < size.height; ++y) {
@@ -389,7 +389,10 @@ bool ConfigDialog::SetButton(SVCButtonBindInfo &info) {
     if (!dialog.IsButtonBinded())
         return false;
     auto &bind_info = dialog.GetButtonBindingInfo();
-    info.device_list = bind_info.device_list;
+    auto device_list = bind_info.device_list;
+    info.device_name = GetHIDDeviceName(device_list);
+    info.product_name = GetHIDProductName(device_list);
+    info.device_list = device_list;
     info.usage_page = bind_info.usage_page;
     info.usage_id = bind_info.usage_id;
     return true;
@@ -401,7 +404,10 @@ bool ConfigDialog::SetKnob(SVCKnobBindInfo &info) {
     if (!dialog.IsKnobBinded())
         return false;
     auto &bind_info = dialog.GetKnobBindingInfo();
-    info.device_list = bind_info.device_list;
+    auto device_list = bind_info.device_list;
+    info.device_name = GetHIDDeviceName(device_list);
+    info.product_name = GetHIDProductName(device_list);
+    info.device_list = device_list;
     info.increase_direction = bind_info.increase_direction;
     info.usage_page = bind_info.usage_page;
     info.usage_id = bind_info.usage_id;
@@ -415,7 +421,10 @@ bool ConfigDialog::SetKnobAsMouse(SVCKnobBindInfo &info) {
         return false;
     auto &bind_info = dialog.GetKnobBindingInfo();
     info.type = Mouse;
-    info.device_list = bind_info.device_list;
+    auto device_list = bind_info.device_list;
+    info.device_name = GetHIDDeviceName(device_list);
+    info.product_name = GetHIDProductName(device_list);
+    info.device_list = device_list;
     info.increase_direction = bind_info.increase_direction;
     info.usage_page = bind_info.usage_page;
     info.usage_id = bind_info.usage_id;

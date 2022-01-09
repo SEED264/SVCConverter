@@ -119,7 +119,7 @@ public:
     RawInputDeviceLists GetRawDeviceLists() const {
         return raw_device_lists_;
     }
- 
+
 private:
     using RawInputDeviceListsMap = std::map<HIDUsagePair, RawInputDeviceLists>;
     RawInputDeviceLists mouse_device_lists_;
@@ -130,6 +130,8 @@ private:
 wxString GetHIDDeviceName(const RAWINPUTDEVICELIST &device_list);
 
 wxString GetHIDProductName(const RAWINPUTDEVICELIST &device_list);
+
+wxString ExtractHIDDeviceIDs(const wxString &device_name);
 
 HIDUsagePair GetDeviceUsage(const RAWINPUTDEVICELIST &device_list);
 

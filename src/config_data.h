@@ -46,6 +46,12 @@ struct SVCButtonBindInfo {
     // RawInput device list
     RAWINPUTDEVICELIST device_list = { .hDevice = nullptr };
 
+    // RawInput device name
+    std::string device_name;
+
+    // RawInput device product name
+    std::string product_name;
+
     // Usage page
     unsigned short usage_page = 0;
     // Usage id
@@ -62,6 +68,12 @@ struct SVCKnobBindInfo {
 
     // RawInput device list
     RAWINPUTDEVICELIST device_list = { .hDevice = nullptr };
+
+    // RawInput device name
+    std::string device_name;
+
+    // RawInput device product name
+    std::string product_name;
 
     // Usage page
     unsigned short usage_page = 0;
