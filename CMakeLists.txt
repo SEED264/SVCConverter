@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.10.0)
 set(CMAKE_C_COMPILER   clang)
 set(CMAKE_CXX_COMPILER clang++)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Set resource compiler
 if (WIN32 AND NOT MSVC)
     set(CMAKE_RC_COMPILER windres)
@@ -59,10 +61,13 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(${PROJECT_NAME} PRIVATE /std:c++latest /utf-8 /w /MT /MP)
     target_link_options(${PROJECT_NAME} PRIVATE /SUBSYSTEM:WINDOWS)
 else()
-    target_compile_options(${PROJECT_NAME} PRIVATE -O3)
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        -O3
+    )
     target_link_options(${PROJECT_NAME} PRIVATE
-        -s
-        -mwindows)
+        -static
+        -mwindows
+    )
 endif()
 
 # Install
