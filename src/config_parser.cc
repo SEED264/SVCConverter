@@ -115,7 +115,9 @@ void SVCConfigParser::ParseButtonBindInfo(nlohmann::json &config,
     // Do nothing if config isn't object
     if (!config.is_object())
         return;
-    ParseDevice(config["device"]["device_name"], &out_info->device_list, device_manager);
+    ParseDevice(config["device"]["device_name"], config["device"]["product_name"],
+                &out_info->device_list, &out_info->device_name, &out_info->product_name,
+                device_manager);
     GetUsage(config, &out_info->usage_page, &out_info->usage_id);
     ParseKey(config["key"], &out_info->key);
 }
@@ -127,25 +129,49 @@ void SVCConfigParser::ParseKnobBindInfo(nlohmann::json &config,
     if (!config.is_object())
         return;
     ParseKnobDeviceType(config["type"], &out_info->type);
-    ParseDevice(config["device"]["device_name"], &out_info->device_list, device_manager);
+    ParseDevice(config["device"]["device_name"], config["device"]["product_name"],
+                &out_info->device_list, &out_info->device_name, &out_info->product_name,
+                device_manager);
     GetUsage(config, &out_info->usage_page, &out_info->usage_id);
     ParseKey(config["l_key"], &out_info->l_key);
     ParseKey(config["r_key"], &out_info->r_key);
     ParseKnobIncreaseDirection(config["direction"], &out_info->increase_direction);
 }
 
-void SVCConfigParser::ParseDevice(const nlohmann::json &config,
+void SVCConfigParser::ParseDevice(const nlohmann::json &device_name_config,
+                                  const nlohmann::json &product_name_config,
                                   RAWINPUTDEVICELIST *out_device_list,
+                                  std::string *out_device_name,
+                                  std::string *out_product_name,
                                   const RawInputDeviceManager &device_manager) {
-    if (!config.is_string())
+    if (!device_name_config.is_string())
         return;
-    auto device_name = config.get<std::string>();
+    auto device_name = wxString(device_name_config.get<std::string>());
+    auto product_name = wxString(product_name_config.get<std::string>());
     auto device_lists = device_manager.GetRawDeviceLists();
+
+    *out_device_name = device_name;
+    *out_product_name = product_name;
     // Return device list if the device names match
     for (auto &device_list : device_lists) {
         if (GetHIDDeviceName(device_list) == device_name) {
             *out_device_list = device_list;
-            break;
+            return;
+        }
+    }
+
+    // Return device list if the device IDs match
+    for (auto &device_list : device_lists) {
+        auto device_id = ExtractHIDDeviceIDs(GetHIDDeviceName(device_list));
+
+        // Ignore if VID and PID are missing
+        if (device_id.size() < 17)
+            continue;
+
+        auto find_pos = device_name.Find(device_id);
+        if (find_pos >= 0) {
+            *out_device_list = device_list;
+            return;
         }
     }
 }
@@ -193,22 +219,26 @@ void SVCConfigParser::GetUsage(const nlohmann::json &config,
 void SVCConfigParser::DumpButtonBindInfo(nlohmann::json &out_config,
                                          const SVCButtonBindInfo &info) {
     out_config["device"]["device_name"] = GetHIDDeviceName(info.device_list);
-    out_config["device"]["product_name"] = GetHIDProductName(info.device_list);
     out_config["usage_page"] = info.usage_page;
     out_config["usage_id"] = info.usage_id;
     out_config["key"] = info.key;
+
+    out_config["device"]["product_name"] = info.product_name;
+    out_config["device"]["device_name"] = info.device_name;
 }
 
 void SVCConfigParser::DumpKnobBindInfo(nlohmann::json &out_config,
                                        const SVCKnobBindInfo &info) {
     DumpKnobDeviceType(out_config["type"], info.type);
     out_config["device"]["device_name"] = GetHIDDeviceName(info.device_list);
-    out_config["device"]["product_name"] = GetHIDDeviceName(info.device_list);
     out_config["usage_page"] = info.usage_page;
     out_config["usage_id"] = info.usage_id;
     out_config["l_key"] = info.l_key;
     out_config["r_key"] = info.r_key;
     DumpKnobIncreaseDirection(out_config["direction"], info.increase_direction);
+
+    out_config["device"]["product_name"] = info.product_name;
+    out_config["device"]["device_name"] = info.device_name;
 }
 
 void SVCConfigParser::DumpKnobDeviceType(nlohmann::json& out_config,

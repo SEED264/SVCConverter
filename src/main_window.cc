@@ -91,7 +91,7 @@ void MainWindow::InitGUI() {
         ID_BUTTON_CONFIG);
     Bind(wxEVT_BUTTON, [this](wxCommandEvent&){ Close(); }, wxID_EXIT);
     Bind(wxEVT_TIMER, &MainWindow::OnTimer, this, timer_.GetId());
-    timer_.Start(1000 / 120);
+    timer_.Start(1000 / 1000);
 }
 
 void MainWindow::SelectLanguage(const wxString &lang_name) {

@@ -230,7 +230,8 @@ WXLRESULT RawInputFetcher::MSWWindowProc(WXUINT nMsg, WXWPARAM wParam, WXLPARAM 
         break;
     }
     }
-    return 0;
+
+    return wxFrame::MSWWindowProc(nMsg, wParam, lParam);
 }
 
 RawInputDeviceManager::RawInputDeviceManager() {
@@ -292,13 +293,23 @@ wxString GetHIDProductName(const RAWINPUTDEVICELIST &device_list) {
 
     std::vector<wchar_t> product_name(1024);
     // Open HID device
-    HANDLE hid_handle = CreateFile(device_name.data(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
+    HANDLE hid_handle = CreateFile(device_name.data(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                   nullptr, OPEN_EXISTING, 0, nullptr);
     // Get devices product string
-    HidD_GetProductString(hid_handle, product_name.data(), sizeof(wchar_t)*1024);
+    HidD_GetProductString(hid_handle, product_name.data(), sizeof(wchar_t) * product_name.size());
     // Close HID device
     CloseHandle(hid_handle);
 
     return wxString(product_name.data());
+}
+
+wxString ExtractHIDDeviceIDs(const wxString &device_name) {
+    auto first = device_name.find('#');
+    auto second = device_name.find('#', first + 1);
+    if (first == -1 || second == -1)
+        return "";
+
+    return device_name.SubString(first + 1, second - 1);
 }
 
 HIDUsagePair GetDeviceUsage(const RAWINPUTDEVICELIST &device_list) {
