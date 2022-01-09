@@ -240,7 +240,7 @@ std::vector<unsigned char> ConfigDialog::LoadBinaryFile(const std::string &file_
 
 cv::Mat ConfigDialog::DecodeToMat(const std::vector<unsigned char> &source_image) {
     unsigned int width = 0, height = 0;
-    // OutputDebugString(wxString::Format("width : %i, height : %i", width, height));
+
     lodepng::State state;
     state.info_raw.colortype = LCT_RGB;
     std::vector<unsigned char> decoded_pixels;
