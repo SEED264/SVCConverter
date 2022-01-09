@@ -4,6 +4,8 @@
 
 using nlohmann::json;
 
+auto setting_file_name = std::string("svc_converter_setting.json");
+
 void ParseSetting() {
     std::ifstream setting_file(setting_file_name);
     if (!setting_file)

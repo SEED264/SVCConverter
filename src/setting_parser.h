@@ -4,7 +4,7 @@
 #include <string>
 #include "config_data.h"
 
-static const std::string setting_file_name("svc_converter_setting.json");
+extern std::string setting_file_name;
 
 void ParseSetting();
 
