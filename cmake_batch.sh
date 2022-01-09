@@ -28,6 +28,8 @@ opencv_root_dir_vs=""
 # Launch cmake
 case $mode in
 "msvc")
+    mkdir ../build_vc
+    cd ../build_vc
     cmake_prefix_path=""
 
     cmake .. -G"Visual Studio 16 2019" -A x64 \
@@ -45,7 +47,7 @@ case $mode in
         -DCMAKE_PREFIX_PATH=$cmake_prefix_path \
         -DCMAKE_INSTALL_PREFIX=$cmake_install_path \
         -DwxWidgets_ROOT_DIR=$wxwidgets_root_dir \
-        -DwxWidgets_CONFIG_EXECUTABLE="${wxwidgets_root_dir}/bin/wx-config"
+        -DwxWidgets_CONFIG_EXECUTABLE="${wxwidgets_root_dir}/bin/wx-config" \
         -DOpenCV_STATIC=ON \
         -DOpenCV_DIR=$opencv_root_dir
 ;;
